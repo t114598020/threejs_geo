@@ -1,4 +1,70 @@
 /// <reference path="Command.js" />
+
+// Parts placed again at exactly the same spot (e.g. the column on a corner shared by two
+// spaces) are not added a second time. Every placement request is counted per spot, and a
+// part is removed only when the last command that placed it is undone.
+var partPlacements = {};	// spot -> { mesh: the part, count: number of placement requests }
+var partRequests = {};		// mesh name used by a command -> spots it requested
+
+function placementKey(mesh)
+{
+	mesh.updateMatrix();
+
+	var key = mesh.userData.part;
+	var e = mesh.matrix.elements;
+
+	for (var i = 0; i < 16; i++) {
+		key += ',' + (Math.round(e[i] * 1e6) / 1e6 || 0);	// || 0 turns -0 into 0
+	}
+
+	return key;
+}
+
+function placePart(mesh)
+{
+	var key = placementKey(mesh);
+
+	if (!partRequests[mesh.name]) partRequests[mesh.name] = [];
+	partRequests[mesh.name].push(key);
+
+	if (partPlacements[key]) {
+		partPlacements[key].count++;
+		return;
+	}
+
+	mesh.userData.placement = key;
+	partPlacements[key] = { mesh: mesh, count: 1 };
+	scene.add(mesh);
+}
+
+// Takes back the last placement request made under this name; false if there is none.
+function releasePart(_scene, name)
+{
+	var keys = partRequests[name];
+	if (!keys) return false;
+
+	var key = keys.pop();
+	if (keys.length === 0) delete partRequests[name];
+
+	var placement = partPlacements[key];
+	if (placement && --placement.count === 0) {
+		delete partPlacements[key];
+		_scene.remove(placement.mesh);
+
+		// nothing is shared in this version: the part owns its geometry and material
+		placement.mesh.geometry.dispose();
+		placement.mesh.material.dispose();
+	}
+
+	return true;
+}
+
+function clearPlacements()
+{
+	partPlacements = {};
+	partRequests = {};
+}
+
 function Factory()
 {
 	this.addGround = function(x_size, y_size, color, specular)
@@ -34,7 +100,7 @@ function Factory()
 			mesh.castShadow = true;
 			mesh.receiveShadow = true;
 			mesh.name = "BaseSpace";
-			scene.add(mesh);
+			placePart(mesh);
 		});
 	}
 	
@@ -56,7 +122,7 @@ function Factory()
 			mesh.castShadow = true;
 			mesh.receiveShadow = true;
 			mesh.name = id;
-			scene.add(mesh);
+			placePart(mesh);
 		} );
 	}
 	
@@ -78,7 +144,7 @@ function Factory()
 			mesh.castShadow = true;
 			mesh.receiveShadow = true;
 			mesh.name = id;
-			scene.add(mesh);
+			placePart(mesh);
 		} );
 	}
 
@@ -99,7 +165,7 @@ function Factory()
 	        mesh.castShadow = true;
 	        mesh.receiveShadow = true;
 	        mesh.name = id;
-	        scene.add(mesh);
+	        placePart(mesh);
 	    });
 	}
 
@@ -120,7 +186,7 @@ function Factory()
 	        mesh.castShadow = true;
 	        mesh.receiveShadow = true;
 	        mesh.name = id;
-	        scene.add(mesh);
+	        placePart(mesh);
 	    });
 	}
 
@@ -141,7 +207,7 @@ function Factory()
 	        mesh.castShadow = true;
 	        mesh.receiveShadow = true;
 	        mesh.name = id;
-	        scene.add(mesh);
+	        placePart(mesh);
 	    });
 	}
 
@@ -149,26 +215,21 @@ function Factory()
 	    var loader = new THREE.STLLoader();
 	    var mesh;
 
-	    var mesh = scene.getObjectByName(id);
-	    if (mesh && mesh instanceof THREE.Mesh) { } else {
-	        loader.load('./models/SevenObliquelyBracket.stl', function (geometry) {
-	            // a bracket with this name may have been added while the STL was loading
-	            if (scene.getObjectByName(id)) return;
+	    loader.load('./models/SevenObliquelyBracket.stl', function (geometry) {
 
-	            var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
-	            mesh = new THREE.Mesh(geometry, material);
-	            mesh.userData.part = 'SevenObliquelyBracket';   // source STL in models/, used by X3DExporter
+	        var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
+	        mesh = new THREE.Mesh(geometry, material);
+	        mesh.userData.part = 'SevenObliquelyBracket';   // source STL in models/, used by X3DExporter
 
-	            mesh.position.set(x, 0.27, z);
-	            mesh.rotation.set(0, rad_y, 0);
-	            mesh.scale.set(0.001, 0.001, 0.001);
+	        mesh.position.set(x, 0.27, z);
+	        mesh.rotation.set(0, rad_y, 0);
+	        mesh.scale.set(0.001, 0.001, 0.001);
 
-	            mesh.castShadow = true;
-	            mesh.receiveShadow = true;
-	            mesh.name = id;
-	            scene.add(mesh);
-	        });
-	    } 
+	        mesh.castShadow = true;
+	        mesh.receiveShadow = true;
+	        mesh.name = id;
+	        placePart(mesh);
+	    });
 	}
 
     //ผู
@@ -189,7 +250,7 @@ function Factory()
 	        mesh.castShadow = true;
 	        mesh.receiveShadow = true;
 	        mesh.name = id;
-	        scene.add(mesh);
+	        placePart(mesh);
 	    });
 	}
 
@@ -210,7 +271,7 @@ function Factory()
 	        mesh.castShadow = true;
 	        mesh.receiveShadow = true;
 	        mesh.name = id;
-	        scene.add(mesh);
+	        placePart(mesh);
 	    });
 	}
 	
@@ -231,7 +292,7 @@ function Factory()
 	        mesh.castShadow = true;
 	        mesh.receiveShadow = true;
 	        mesh.name = id;
-	        scene.add(mesh);
+	        placePart(mesh);
 	    });
 	}
 
@@ -252,7 +313,7 @@ function Factory()
 	        mesh.castShadow = true;
 	        mesh.receiveShadow = true;
 	        mesh.name = id;
-	        scene.add(mesh);
+	        placePart(mesh);
 	    });
 	}
 
@@ -273,7 +334,7 @@ function Factory()
 	        mesh.castShadow = true;
 	        mesh.receiveShadow = true;
 	        mesh.name = id;
-	        scene.add(mesh);
+	        placePart(mesh);
 	    });
 	}
 
@@ -294,7 +355,7 @@ function Factory()
 	        mesh.castShadow = true;
 	        mesh.receiveShadow = true;
 	        mesh.name = id;
-	        scene.add(mesh);
+	        placePart(mesh);
 	    });
 	}
 
@@ -315,7 +376,7 @@ function Factory()
 	        mesh.castShadow = true;
 	        mesh.receiveShadow = true;
 	        mesh.name = id;
-	        scene.add(mesh);
+	        placePart(mesh);
 	    });
 	}
 
@@ -336,7 +397,7 @@ function Factory()
 	        mesh.castShadow = true;
 	        mesh.receiveShadow = true;
 	        mesh.name = id;
-	        scene.add(mesh);
+	        placePart(mesh);
 	    });
 	}
 
@@ -357,7 +418,7 @@ function Factory()
 	        mesh.castShadow = true;
 	        mesh.receiveShadow = true;
 	        mesh.name = id;
-	        scene.add(mesh);
+	        placePart(mesh);
 	    });
 	}
 
@@ -378,7 +439,7 @@ function Factory()
 	        mesh.castShadow = true;
 	        mesh.receiveShadow = true;
 	        mesh.name = id;
-	        scene.add(mesh);
+	        placePart(mesh);
 	    });
 	}
 
@@ -399,7 +460,7 @@ function Factory()
 	        mesh.castShadow = true;
 	        mesh.receiveShadow = true;
 	        mesh.name = id;
-	        scene.add(mesh);
+	        placePart(mesh);
 	    });
 	}
 
@@ -420,7 +481,7 @@ function Factory()
 	        mesh.castShadow = true;
 	        mesh.receiveShadow = true;
 	        mesh.name = id;
-	        scene.add(mesh);
+	        placePart(mesh);
 	    });
 	}
 
@@ -441,7 +502,7 @@ function Factory()
 	        mesh.castShadow = true;
 	        mesh.receiveShadow = true;
 	        mesh.name = id;
-	        scene.add(mesh);
+	        placePart(mesh);
 	    });
 	}
 
@@ -462,7 +523,7 @@ function Factory()
 	        mesh.castShadow = true;
 	        mesh.receiveShadow = true;
 	        mesh.name = id;
-	        scene.add(mesh);
+	        placePart(mesh);
 	    });
 	}
 
@@ -483,7 +544,7 @@ function Factory()
 	        mesh.castShadow = true;
 	        mesh.receiveShadow = true;
 	        mesh.name = id;
-	        scene.add(mesh);
+	        placePart(mesh);
 	    });
 	}
 	
@@ -539,9 +600,13 @@ function Factory()
 	}
 
 	this.removeMesh = function(_scene, id) {
+	    // parts placed by several commands stay until the last of them removes them (see placePart)
+	    if (releasePart(_scene, id)) return;
+
 	    var mesh = _scene.getObjectByName(id);
 	    if (mesh && mesh instanceof THREE.Mesh) {
 	        _scene.remove(mesh);
+	        if (mesh.userData.placement) delete partPlacements[mesh.userData.placement];
 
 	        //Release memory spaces
 	        if (mesh.material.map) {
