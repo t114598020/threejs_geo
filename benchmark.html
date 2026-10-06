@@ -35,12 +35,14 @@
 </p>
 
 <details>
-	<summary>第一次使用：準備兩個版本</summary>
+	<summary>第一次使用：準備比較的版本</summary>
+	<p>這裡（<code>fix-overlap</code> branch）預設比較兩個都已修復重疊的版本，差別只在有沒有共用 geometry。</p>
 	<ol>
-		<li>在 <code>threejs_geo</code> 資料夾執行 <code>git worktree add ../threejs_geo_before baseline</code>，把修改前的版本放在旁邊的 <code>threejs_geo_before</code>。<code>baseline</code> branch 是共用 geometry 之前的版本，只多了跟新版相同的斗栱重疊修正，讓兩邊的生成結果一致。</li>
-		<li>到 <code>threejs_geo</code> 的<strong>上一層</strong>資料夾執行 <code>python -m http.server 8000</code>。兩個版本要由同一個 server 提供，這個頁面才能讀取它們的畫面。</li>
-		<li>用 Chrome 打開 <code>http://localhost:8000/threejs_geo/benchmark.html</code>。</li>
+		<li>在 <code>threejs_geo</code> 資料夾執行 <code>git worktree add ../threejs_fix_overlap baseline-fix-overlap</code>，把沒有共用 geometry 的修復版放在旁邊的 <code>threejs_fix_overlap</code>。</li>
+		<li>到這些資料夾的<strong>上一層</strong>執行 <code>python -m http.server 8000</code>。所有版本要由同一個 server 提供，這個頁面才能讀取它們的畫面。</li>
+		<li>用 Chrome 打開 <code>http://localhost:8000/threejs_geo_fix_overlap/benchmark.html</code>，在 DevTools 的 Network 分頁勾選 Disable cache，並在測試期間保持 DevTools 開著。生成器是在頁面載入後才開啟的，按 Ctrl+F5 不會更新它的快取。</li>
 	</ol>
+	<p>其他版本的路徑：<code>../threejs_geo_before/</code>（原始，<code>baseline</code>）、<code>../threejs_geo/</code>（共用 geometry、未修復重疊，<code>main</code>）。</p>
 	<p>測試時請讓這個分頁保持在前景。瀏覽器會放慢背景分頁的計時器，生成時間會不準。</p>
 </details>
 
@@ -83,15 +85,15 @@
 
 <script>
 
-const STORAGE_KEY = 'generator-benchmark';
+const STORAGE_KEY = 'generator-benchmark:' + location.pathname;	// every copy of this page keeps its own settings
 const QUIET_MS = 5000;			// generation is done when no part was added for this long
 const TIMEOUT_MS = 5 * 60 * 1000;	// give up on a run after this long
 const FRAME_SAMPLES = 10;
 
 const DEFAULT_CONFIG = {
 	versions: [
-		{ name: '修改前', path: '../threejs_geo_before/', enabled: true },
-		{ name: '共用 geometry', path: './', enabled: true }
+		{ name: '未共用 geometry（已修復重疊）', path: '../threejs_fix_overlap/', enabled: true },
+		{ name: '共用 geometry（已修復重疊）', path: './', enabled: true }
 	],
 	page: 'DoubleGroove.html',
 	repeats: 3,
