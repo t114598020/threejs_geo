@@ -228,6 +228,7 @@ function ModelingModel()
 	}
 
 	function clearScene(_scene) {
+	    clearPlacements();	// every part is removed below (see placePart in Factory.js)
 
 	    for (var i = _scene.children.length - 1; i >= 0; i--) {
 
