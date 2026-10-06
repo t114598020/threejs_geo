@@ -179,6 +179,8 @@ function Factory()
 	    var mesh = scene.getObjectByName(id);
 	    if (mesh && mesh instanceof THREE.Mesh) { } else {
 	        loadPart('SevenObliquelyBracket', function (geometry) {
+	            // a bracket with this name may have been added while the STL was loading
+	            if (scene.getObjectByName(id)) return;
 
 	            mesh = new THREE.Mesh(geometry, partMaterial);
 	            mesh.userData.part = 'SevenObliquelyBracket';   // source STL in models/, used by X3DExporter
