@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>生成器效能測試</title>
+<style>
+	body { margin: 24px; color: #222; background: #fafafa; font-family: system-ui, "Microsoft JhengHei", sans-serif; line-height: 1.5; }
+	h1 { margin: 0 0 8px; font-size: 22px; }
+	h2 { margin: 28px 0 8px; font-size: 17px; }
+	.muted { color: #666; font-size: 14px; }
+	fieldset { margin: 12px 0; padding: 12px 16px; border: 1px solid #ddd; border-radius: 6px; background: #fff; }
+	fieldset div { margin: 6px 0; }
+	label { margin-right: 16px; }
+	input[type=text] { width: 240px; font-family: monospace; }
+	input[type=number] { width: 60px; }
+	button { margin-right: 8px; padding: 6px 14px; }
+	code { padding: 1px 4px; border-radius: 3px; background: #eee; }
+	table { border-collapse: collapse; background: #fff; font-size: 14px; }
+	th, td { padding: 4px 10px; border: 1px solid #ddd; text-align: right; white-space: nowrap; }
+	th:first-child, td:first-child { text-align: left; }
+	#status { margin: 8px 0; font-weight: 600; }
+	.error { color: #b00020; }
+	.ok { color: #0a7d32; }
+	#stage { width: 640px; height: 400px; overflow: hidden; border: 1px solid #ccc; background: #fff; }
+	#stage iframe { width: 1280px; height: 800px; border: 0; transform: scale(0.5); transform-origin: 0 0; }
+</style>
+</head>
+<body>
+
+<h1>生成器效能測試</h1>
+<p class="muted">
+	自動在右側預覽按 Start → Resume 跑完所有階段，比較各版本的記憶體、STL 讀取次數、生成與繪製時間，並檢查 X3D（DEF/USE）匯出內容是否一致。
+	生成器畫面固定為 1280×800、像素比固定為 1，讓不同電腦的繪製時間可以比較。
+</p>
+
+<details>
+	<summary>第一次使用：準備兩個版本</summary>
+	<ol>
+		<li>在 <code>threejs_geo</code> 資料夾執行 <code>git worktree add ../threejs_geo_before f7a6b2c</code>，把修改前的版本放在旁邊的 <code>threejs_geo_before</code>。</li>
+		<li>到 <code>threejs_geo</code> 的<strong>上一層</strong>資料夾執行 <code>python -m http.server 8000</code>。兩個版本要由同一個 server 提供，這個頁面才能讀取它們的畫面。</li>
+		<li>用 Chrome 打開 <code>http://localhost:8000/threejs_geo/benchmark.html</code>。</li>
+	</ol>
+	<p>測試時請讓這個分頁保持在前景。瀏覽器會放慢背景分頁的計時器，生成時間會不準。</p>
+</details>
+
+<fieldset id="form">
+	<div id="versions"></div>
+	<div>
+		<label>殿閣頁面
+			<select id="page">
+				<option value="DoubleGroove.html">雙槽（DoubleGroove）</option>
+				<option value="SingleGroove.html">單槽（SingleGroove）</option>
+				<option value="KimTuBoxBottomGroove.html">金廂枓底槽（KimTuBoxBottomGroove）</option>
+				<option value="TuDistractionBottomGroove.html">分心枓底槽（TuDistractionBottomGroove）</option>
+			</select>
+		</label>
+		<label>每個版本跑 <input id="repeats" type="number" min="1" max="10"> 次</label>
+		<label><input id="pauseRender" type="checkbox"> 生成時暫停繪製</label>
+	</div>
+	<div class="muted">
+		暫停繪製時，「第一次繪製」等於一次把所有構件上傳到 GPU；不暫停的話，上傳會分散在生成過程中，這個數字會很小。
+	</div>
+	<div>
+		<button id="start">開始測試</button>
+		<button id="stop">停止</button>
+		<button id="clear">清除結果</button>
+		<button id="csv">下載 CSV</button>
+	</div>
+</fieldset>
+
+<div id="status"></div>
+<div id="stage"></div>
+
+<h2>結果（中位數）</h2>
+<div id="summary" class="muted">還沒有結果。</div>
+
+<h2>每次測試</h2>
+<div id="runs" class="muted">還沒有結果。</div>
+
+<h2>測試環境</h2>
+<div id="env" class="muted">開始測試後顯示。</div>
+
+<script>
+
+const STORAGE_KEY = 'generator-benchmark';
+const QUIET_MS = 5000;			// generation is done when no part was added for this long
+const TIMEOUT_MS = 5 * 60 * 1000;	// give up on a run after this long
+const FRAME_SAMPLES = 10;
+
+const DEFAULT_CONFIG = {
+	versions: [
+		{ name: '修改前', path: '../threejs_geo_before/', enabled: true },
+		{ name: '共用 geometry', path: './', enabled: true }
+	],
+	page: 'DoubleGroove.html',
+	repeats: 3,
+	pauseRender: true
+};
+
+// [key, label, decimals]
+const METRICS = [
+	[ 'meshes', '構件數', 0 ],
+	[ 'geometries', 'geometry 份數', 0 ],
+	[ 'materials', '材質數', 0 ],
+	[ 'vertexMB', '頂點資料 (MB)', 1 ],
+	[ 'stlRequests', 'STL 讀取次數', 0 ],
+	[ 'heapMB', 'JS 記憶體 (MB)', 0 ],
+	[ 'generationS', '生成總時間 (s)', 1 ],
+	[ 'firstRenderMs', '第一次繪製 (ms)', 0 ],
+	[ 'frameMedianMs', '每幀中位數 (ms)', 1 ],
+	[ 'frameMinMs', '每幀最快 (ms)', 1 ],
+	[ 'frameMaxMs', '每幀最慢 (ms)', 1 ],
+	[ 'drawCalls', 'draw call', 0 ],
+	[ 'x3dBytes', 'X3D 大小 (bytes)', 0 ]
+];
+
+// ---- state, kept across the page reloads between runs ------------------------------------------
+
+let storageWorks = true;
+let state = loadState() || { config: structuredClone( DEFAULT_CONFIG ), queue: [], results: [], running: false, env: null };
+
+function loadState() {
+
+	try {
+
+		return JSON.parse( sessionStorage.getItem( STORAGE_KEY ) );
+
+	} catch ( e ) {
+
+		storageWorks = false;
+		return null;
+
+	}
+
+}
+
+function saveState() {
+
+	try {
+
+		sessionStorage.setItem( STORAGE_KEY, JSON.stringify( state ) );
+
+	} catch ( e ) {
+
+		storageWorks = false;
+
+	}
+
+}
+
+// ---- form ----------------------------------------------------------------------------------------
+
+const $ = ( id ) => document.getElementById( id );
+
+function showConfig() {
+
+	$( 'versions' ).innerHTML = state.config.versions.map( ( v, i ) =>
+		'<div><label><input type="checkbox" data-i="' + i + '" class="v-enabled"' + ( v.enabled ? ' checked' : '' ) + '> 版本名稱</label>' +
+		'<input type="text" class="v-name" data-i="' + i + '" value="' + escapeHtml( v.name ) + '"> ' +
+		'<label>路徑 <input type="text" class="v-path" data-i="' + i + '" value="' + escapeHtml( v.path ) + '"></label></div>'
+	).join( '' );
+
+	$( 'page' ).value = state.config.page;
+	$( 'repeats' ).value = state.config.repeats;
+	$( 'pauseRender' ).checked = state.config.pauseRender;
+
+	for ( const el of $( 'form' ).querySelectorAll( 'input, select' ) ) el.disabled = state.running;
+	$( 'start' ).disabled = state.running;
+	$( 'stop' ).disabled = ! state.running;
+	$( 'clear' ).disabled = state.running;
+
+}
+
+function readConfig() {
+
+	const config = structuredClone( state.config );
+
+	for ( const el of document.querySelectorAll( '.v-enabled' ) ) config.versions[ el.dataset.i ].enabled = el.checked;
+	for ( const el of document.querySelectorAll( '.v-name' ) ) config.versions[ el.dataset.i ].name = el.value.trim() || '版本 ' + ( + el.dataset.i + 1 );
+	for ( const el of document.querySelectorAll( '.v-path' ) ) config.versions[ el.dataset.i ].path = el.value.trim();
+
+	config.page = $( 'page' ).value;
+	config.repeats = Math.min( 10, Math.max( 1, parseInt( $( 'repeats' ).value ) || 1 ) );
+	config.pauseRender = $( 'pauseRender' ).checked;
+
+	return config;
+
+}
+
+$( 'start' ).onclick = function () {
+
+	state.config = readConfig();
+
+	const versions = state.config.versions.filter( ( v ) => v.enabled );
+
+	if ( versions.length === 0 ) {
+
+		setStatus( '請至少勾選一個版本。', true );
+		return;
+
+	}
+
+	// alternate the versions in every round, so slow downs of the machine affect them alike
+	state.queue = [];
+
+	for ( let r = 1; r <= state.config.repeats; r ++ ) {
+
+		for ( const v of versions ) state.queue.push( { version: v, round: r } );
+
+	}
+
+	state.total = state.queue.length;
+	state.results = [];
+	state.env = collectEnvironment();
+	state.running = true;
+	saveState();
+
+	showConfig();
+	showResults();
+	runNext();
+
+};
+
+$( 'stop' ).onclick = function () {
+
+	state.running = false;
+	state.queue = [];
+	saveState();
+	location.reload();
+
+};
+
+$( 'clear' ).onclick = function () {
+
+	state.results = [];
+	state.env = null;
+	saveState();
+	showResults();
+	setStatus( '' );
+
+};
+
+$( 'csv' ).onclick = function () {
+
+	if ( state.results.length === 0 ) return;
+
+	const header = [ '輪次', '版本', '路徑', ...METRICS.map( ( m ) => m[ 1 ] ), 'X3D 指紋', '畫布大小', '備註' ];
+	const rows = state.results.map( ( r ) => [
+		r.round, r.version, r.path, ...METRICS.map( ( m ) => r.error ? '' : r[ m[ 0 ] ] ), r.x3dHash || '', r.canvas || '', notes( r )
+	] );
+	const csv = [ header, ...rows ].map( ( row ) => row.map( csvCell ).join( ',' ) ).join( '\r\n' );
+
+	// the BOM lets Excel read the Chinese headers
+	const link = document.createElement( 'a' );
+	link.href = URL.createObjectURL( new Blob( [ '﻿' + csv ], { type: 'text/csv' } ) );
+	link.download = 'benchmark-' + state.config.page.replace( '.html', '' ) + '.csv';
+	link.click();
+	URL.revokeObjectURL( link.href );
+
+};
+
+// ---- running -------------------------------------------------------------------------------------
+
+async function runNext() {
+
+	const item = state.queue[ 0 ];
+	const index = state.total - state.queue.length + 1;
+
+	setStatus( '測試中 ' + index + '/' + state.total + '：' + item.version.name + '，第 ' + item.round + ' 輪……' );
+
+	let result;
+
+	try {
+
+		await sleep( 1000 ); // let the reloaded page settle
+		result = await runOnce( item.version, state.config );
+
+	} catch ( e ) {
+
+		result = { error: e.message };
+
+	}
+
+	state.results.push( { round: item.round, version: item.version.name, path: item.version.path, ...result } );
+	state.queue.shift();
+	state.running = state.queue.length > 0;
+	saveState();
+
+	if ( state.running ) {
+
+		// a fresh page for every run, so memory left over from the last run does not count
+		if ( storageWorks ) location.reload();
+		else runNext();
+
+	} else {
+
+		$( 'stage' ).innerHTML = '';
+		showConfig();
+		showResults();
+		setStatus( '完成。', false, true );
+
+	}
+
+}
+
+async function runOnce( version, config ) {
+
+	const url = version.path + config.page;
+
+	const frame = document.createElement( 'iframe' );
+	$( 'stage' ).innerHTML = '';
+	$( 'stage' ).appendChild( frame );
+	await new Promise( ( resolve ) => {
+
+		frame.onload = resolve;
+		frame.src = url;
+
+	} );
+
+	const page = frame.contentWindow;
+
+	if ( typeof page.createNewLayoutMap !== 'function' ) {
+
+		throw new Error( '打不開 ' + url + '。請確認路徑正確，並且 server 是從 threejs_geo 的上一層資料夾啟動。' );
+
+	}
+
+	const viewer = await waitFor( () => {
+
+		const f = page.document.getElementById( 'viewer' );
+		const v = f && f.contentWindow;
+		return v && v.initBonds && v.scene && v.renderer ? v : null;
+
+	}, 20000, '右側預覽沒有載入完成' );
+
+	const THREE = viewer.THREE;
+
+	// the same canvas resolution on every machine: the page is 1280×800, and the pixel ratio is 1
+	viewer.renderer.setPixelRatio( 1 );
+	viewer.renderer.setSize( viewer.innerWidth, viewer.innerHeight );
+
+	// count the STL requests of the preview and when the last part was added
+
+	const stats = { requests: 0, pending: 0, lastAdd: 0, hidden: document.hidden };
+
+	const proto = viewer.XMLHttpRequest.prototype;
+	const open = proto.open;
+	const send = proto.send;
+
+	proto.open = function ( method, requestUrl ) {
+
+		this.isStl = /\.stl$/i.test( requestUrl );
+		return open.apply( this, arguments );
+
+	};
+
+	proto.send = function () {
+
+		if ( this.isStl ) {
+
+			stats.requests ++;
+			stats.pending ++;
+			this.addEventListener( 'loadend', () => stats.pending -- );
+
+		}
+
+		return send.apply( this, arguments );
+
+	};
+
+	const add = viewer.scene.add;
+
+	viewer.scene.add = function ( object ) {
+
+		if ( object instanceof THREE.Mesh ) stats.lastAdd = performance.now();
+		return add.apply( this, arguments );
+
+	};
+
+	page.alert = function () {}; // the "Finished!" dialog would block the run
+
+	if ( config.pauseRender ) viewer.requestAnimationFrame = () => 0; // stops the render loop of the preview
+
+	const onVisibilityChange = () => { if ( document.hidden ) stats.hidden = true; };
+	document.addEventListener( 'visibilitychange', onVisibilityChange );
+
+	// Start, then Resume, and wait until the last stage is reached and no part arrives anymore
+
+	const startTime = performance.now();
+
+	page.createNewLayoutMap();
+	page.doSkiptoNextStage();
+
+	const lastStage = page.my_model.getStageNum();
+
+	await waitFor( () =>
+		page.stg_level === lastStage && stats.lastAdd > 0 && stats.pending === 0 && performance.now() - stats.lastAdd > QUIET_MS,
+	TIMEOUT_MS, '生成超過 ' + TIMEOUT_MS / 60000 + ' 分鐘沒有完成' );
+
+	document.removeEventListener( 'visibilitychange', onVisibilityChange );
+
+	// what the preview holds
+
+	const meshes = viewer.scene.children.filter( ( o ) => o instanceof THREE.Mesh && o.name !== 'Plane' );
+	const geometries = new Set( meshes.map( ( m ) => m.geometry ) );
+	const materials = new Set( meshes.map( ( m ) => m.material ) );
+
+	let vertexBytes = 0;
+
+	for ( const g of geometries ) {
+
+		for ( const name in g.attributes ) vertexBytes += g.attributes[ name ].array.byteLength;
+
+	}
+
+	// render timings; gl.finish() waits until the GPU is done
+
+	const renderer = viewer.renderer;
+	const gl = renderer.getContext();
+
+	const renderOnce = () => {
+
+		const t = performance.now();
+		renderer.render( viewer.scene, viewer.camera );
+		gl.finish();
+		return performance.now() - t;
+
+	};
+
+	const firstRenderMs = renderOnce();
+
+	const frames = [];
+	for ( let i = 0; i < FRAME_SAMPLES; i ++ ) frames.push( renderOnce() );
+	frames.sort( ( a, b ) => a - b );
+
+	// X3D export; lines are sorted because the order of the placements may differ between versions
+
+	let x3dBytes = null;
+	let x3dHash = null;
+
+	if ( THREE.X3DExporter ) {
+
+		const x3d = new THREE.X3DExporter().parse( viewer.scene, true );
+		x3dBytes = x3d.length;
+		x3dHash = await fingerprint( x3d.split( '\n' ).map( ( l ) => l.trim() ).sort().join( '\n' ) );
+
+	}
+
+	return {
+		meshes: meshes.length,
+		geometries: geometries.size,
+		materials: materials.size,
+		vertexMB: vertexBytes / 1048576,
+		stlRequests: stats.requests,
+		heapMB: performance.memory ? performance.memory.usedJSHeapSize / 1048576 : null,
+		generationS: ( stats.lastAdd - startTime ) / 1000,
+		firstRenderMs: firstRenderMs,
+		frameMedianMs: median( frames ),
+		frameMinMs: frames[ 0 ],
+		frameMaxMs: frames[ frames.length - 1 ],
+		drawCalls: renderer.info.render.calls,
+		x3dBytes: x3dBytes,
+		x3dHash: x3dHash,
+		canvas: renderer.domElement.width + '×' + renderer.domElement.height,
+		hidden: stats.hidden,
+		pauseRender: config.pauseRender
+	};
+
+}
+
+// ---- results -------------------------------------------------------------------------------------
+
+function showResults() {
+
+	const ok = state.results.filter( ( r ) => ! r.error );
+
+	if ( state.results.length === 0 ) {
+
+		$( 'summary' ).textContent = '還沒有結果。';
+		$( 'runs' ).textContent = '還沒有結果。';
+		$( 'env' ).textContent = state.env ? '' : '開始測試後顯示。';
+		if ( state.env ) showEnvironment();
+		return;
+
+	}
+
+	// summary: median per version (with the range when there are several runs)
+
+	const names = [ ...new Set( state.results.map( ( r ) => r.version ) ) ];
+	let html = '<table><tr><th>項目</th>' + names.map( ( n ) => '<th>' + escapeHtml( n ) + '</th>' ).join( '' ) + '</tr>';
+
+	for ( const [ key, label, decimals ] of METRICS ) {
+
+		html += '<tr><td>' + label + '</td>';
+
+		for ( const name of names ) {
+
+			const values = ok.filter( ( r ) => r.version === name && r[ key ] !== null ).map( ( r ) => r[ key ] );
+
+			if ( values.length === 0 ) {
+
+				html += '<td>–</td>';
+				continue;
+
+			}
+
+			const sorted = values.slice().sort( ( a, b ) => a - b );
+			let cell = format( median( sorted ), decimals );
+
+			if ( sorted.length > 1 && sorted[ 0 ] !== sorted[ sorted.length - 1 ] ) {
+
+				cell += ' <span class="muted">(' + format( sorted[ 0 ], decimals ) + '–' + format( sorted[ sorted.length - 1 ], decimals ) + ')</span>';
+
+			}
+
+			html += '<td>' + cell + '</td>';
+
+		}
+
+		html += '</tr>';
+
+	}
+
+	html += '</table>';
+
+	// is the exported model the same everywhere?
+
+	const hashes = [ ...new Set( ok.map( ( r ) => r.x3dHash ).filter( Boolean ) ) ];
+
+	if ( hashes.length === 1 && ok.length > 1 ) {
+
+		html += '<p class="ok">✓ 所有測試的 X3D 匯出內容一致（指紋 ' + hashes[ 0 ] + '）。</p>';
+
+	} else if ( hashes.length > 1 ) {
+
+		html += '<p class="error">✗ X3D 匯出內容不一致，請看下方每次測試的指紋。</p>';
+
+	}
+
+	const errors = state.results.filter( ( r ) => r.error );
+	if ( errors.length ) html += '<p class="error">' + errors.length + ' 次測試失敗：' + escapeHtml( errors[ 0 ].error ) + '</p>';
+	if ( ok.some( ( r ) => r.hidden ) ) html += '<p class="error">有測試進行時分頁在背景，那幾次的生成時間不準，建議重測。</p>';
+
+	$( 'summary' ).innerHTML = html;
+
+	// every run
+
+	let runs = '<table><tr><th>輪次</th><th>版本</th>' + METRICS.map( ( m ) => '<th>' + m[ 1 ] + '</th>' ).join( '' ) + '<th>X3D 指紋</th><th>備註</th></tr>';
+
+	for ( const r of state.results ) {
+
+		runs += '<tr><td>' + r.round + '</td><td>' + escapeHtml( r.version ) + '</td>';
+
+		if ( r.error ) {
+
+			runs += '<td colspan="' + ( METRICS.length + 1 ) + '" class="error" style="text-align:left">' + escapeHtml( r.error ) + '</td><td></td></tr>';
+			continue;
+
+		}
+
+		runs += METRICS.map( ( [ key, , decimals ] ) => '<td>' + ( r[ key ] === null ? '–' : format( r[ key ], decimals ) ) + '</td>' ).join( '' );
+		runs += '<td>' + ( r.x3dHash || '–' ) + '</td><td style="text-align:left">' + escapeHtml( notes( r ) ) + '</td></tr>';
+
+	}
+
+	$( 'runs' ).innerHTML = runs + '</table>';
+
+	showEnvironment();
+
+}
+
+function showEnvironment() {
+
+	if ( ! state.env ) return;
+
+	const canvas = [ ...new Set( state.results.map( ( r ) => r.canvas ).filter( Boolean ) ) ].join( '、' ) || '–';
+	const rows = [
+		[ '時間', state.env.date ],
+		[ '殿閣頁面', state.config.page ],
+		[ '每個版本次數', state.config.repeats ],
+		[ '生成時暫停繪製', state.config.pauseRender ? '是' : '否' ],
+		[ '預覽畫布大小', canvas ],
+		[ 'GPU', state.env.gpu ],
+		[ '瀏覽器', state.env.userAgent ],
+		[ 'devicePixelRatio', state.env.pixelRatio ]
+	];
+
+	$( 'env' ).innerHTML = '<table>' + rows.map( ( r ) => '<tr><td>' + r[ 0 ] + '</td><td style="text-align:left">' + escapeHtml( String( r[ 1 ] ) ) + '</td></tr>' ).join( '' ) + '</table>';
+
+}
+
+function collectEnvironment() {
+
+	let gpu = '（無法取得）';
+
+	try {
+
+		const gl = document.createElement( 'canvas' ).getContext( 'webgl' );
+		const info = gl.getExtension( 'WEBGL_debug_renderer_info' );
+		gpu = gl.getParameter( info ? info.UNMASKED_RENDERER_WEBGL : gl.RENDERER );
+
+	} catch ( e ) {}
+
+	return {
+		date: new Date().toLocaleString(),
+		gpu: gpu,
+		userAgent: navigator.userAgent,
+		pixelRatio: window.devicePixelRatio
+	};
+
+}
+
+function notes( r ) {
+
+	const list = [];
+	if ( r.error ) list.push( r.error );
+	if ( r.hidden ) list.push( '分頁曾在背景' );
+	if ( r.canvas ) list.push( '畫布 ' + r.canvas );
+	return list.join( '；' );
+
+}
+
+// ---- helpers -------------------------------------------------------------------------------------
+
+function sleep( ms ) {
+
+	return new Promise( ( resolve ) => setTimeout( resolve, ms ) );
+
+}
+
+async function waitFor( check, timeout, message ) {
+
+	const start = performance.now();
+
+	for ( ;; ) {
+
+		const value = check();
+		if ( value ) return value;
+		if ( performance.now() - start > timeout ) throw new Error( message );
+		await sleep( 200 );
+
+	}
+
+}
+
+function median( sorted ) {
+
+	sorted = sorted.slice().sort( ( a, b ) => a - b );
+	const mid = sorted.length >> 1;
+	return sorted.length % 2 ? sorted[ mid ] : ( sorted[ mid - 1 ] + sorted[ mid ] ) / 2;
+
+}
+
+async function fingerprint( text ) {
+
+	if ( window.crypto && crypto.subtle ) {
+
+		const digest = new Uint8Array( await crypto.subtle.digest( 'SHA-256', new TextEncoder().encode( text ) ) );
+		return Array.from( digest.slice( 0, 8 ) ).map( ( b ) => b.toString( 16 ).padStart( 2, '0' ) ).join( '' );
+
+	}
+
+	// crypto.subtle only exists on localhost and https; FNV-1a otherwise
+	let h = 0x811c9dc5;
+
+	for ( let i = 0; i < text.length; i ++ ) {
+
+		h ^= text.charCodeAt( i );
+		h = Math.imul( h, 0x01000193 );
+
+	}
+
+	return 'fnv-' + ( h >>> 0 ).toString( 16 );
+
+}
+
+function format( value, decimals ) {
+
+	return value.toLocaleString( 'en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals } );
+
+}
+
+function csvCell( value ) {
+
+	const s = value === null || value === undefined ? '' : String( value );
+	return /[",\r\n]/.test( s ) ? '"' + s.replace( /"/g, '""' ) + '"' : s;
+
+}
+
+function escapeHtml( s ) {
+
+	return String( s ).replace( /[&<>"]/g, ( c ) => ( { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' } )[ c ] );
+
+}
+
+function setStatus( text, isError, isOk ) {
+
+	$( 'status' ).textContent = text;
+	$( 'status' ).className = isError ? 'error' : ( isOk ? 'ok' : '' );
+
+}
+
+// ---- start ---------------------------------------------------------------------------------------
+
+showConfig();
+showResults();
+
+if ( state.running && state.queue.length > 0 ) runNext();
+
+</script>
+</body>
+</html>
