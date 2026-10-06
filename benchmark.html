@@ -30,14 +30,14 @@
 
 <h1>生成器效能測試</h1>
 <p class="muted">
-	自動在右側預覽按 Start → Resume 跑完所有階段，比較各版本的記憶體、STL 讀取次數、生成與繪製時間，並檢查 X3D（DEF/USE）匯出內容是否一致。
+	自動按 Start，再像 Resume 一樣連續跑完所有階段，比較各版本的記憶體、STL 讀取次數、生成與繪製時間，並檢查 X3D（DEF/USE）匯出內容是否一致。
 	生成器畫面固定為 1280×800、像素比固定為 1，讓不同電腦的繪製時間可以比較。
 </p>
 
 <details>
 	<summary>第一次使用：準備兩個版本</summary>
 	<ol>
-		<li>在 <code>threejs_geo</code> 資料夾執行 <code>git worktree add ../threejs_geo_before f7a6b2c</code>，把修改前的版本放在旁邊的 <code>threejs_geo_before</code>。</li>
+		<li>在 <code>threejs_geo</code> 資料夾執行 <code>git worktree add ../threejs_geo_before baseline</code>，把修改前的版本放在旁邊的 <code>threejs_geo_before</code>。<code>baseline</code> branch 是共用 geometry 之前的版本，只多了跟新版相同的斗栱重疊修正，讓兩邊的生成結果一致。</li>
 		<li>到 <code>threejs_geo</code> 的<strong>上一層</strong>資料夾執行 <code>python -m http.server 8000</code>。兩個版本要由同一個 server 提供，這個頁面才能讀取它們的畫面。</li>
 		<li>用 Chrome 打開 <code>http://localhost:8000/threejs_geo/benchmark.html</code>。</li>
 	</ol>
@@ -101,6 +101,7 @@ const DEFAULT_CONFIG = {
 // [key, label, decimals]
 const METRICS = [
 	[ 'meshes', '構件數', 0 ],
+	[ 'overlaps', '重疊構件數', 0 ],
 	[ 'geometries', 'geometry 份數', 0 ],
 	[ 'materials', '材質數', 0 ],
 	[ 'vertexMB', '頂點資料 (MB)', 1 ],
@@ -385,12 +386,14 @@ async function runOnce( version, config ) {
 	const onVisibilityChange = () => { if ( document.hidden ) stats.hidden = true; };
 	document.addEventListener( 'visibilitychange', onVisibilityChange );
 
-	// Start, then Resume, and wait until the last stage is reached and no part arrives anymore
+	// Start, then continue in batch mode like Resume, and wait until the last stage is reached and
+	// no part arrives anymore. Start already applies the first rule; calling doSkiptoNextStage() while
+	// that rule is still drawing would start a second chain of rules and place every part twice.
 
 	const startTime = performance.now();
 
 	page.createNewLayoutMap();
-	page.doSkiptoNextStage();
+	page.is_batch_flag = true;
 
 	const lastStage = page.my_model.getStageNum();
 
@@ -403,6 +406,11 @@ async function runOnce( version, config ) {
 	// what the preview holds
 
 	const meshes = viewer.scene.children.filter( ( o ) => o instanceof THREE.Mesh && o.name !== 'Plane' );
+
+	// extra copies of a part placed exactly on top of another one
+	viewer.scene.updateMatrixWorld( true );
+	const placements = new Set( meshes.map( ( m ) => m.userData.part + ':' + m.matrixWorld.elements.map( ( e ) => e.toFixed( 6 ) ).join( ',' ) ) );
+
 	const geometries = new Set( meshes.map( ( m ) => m.geometry ) );
 	const materials = new Set( meshes.map( ( m ) => m.material ) );
 
@@ -449,6 +457,7 @@ async function runOnce( version, config ) {
 
 	return {
 		meshes: meshes.length,
+		overlaps: meshes.length - placements.size,
 		geometries: geometries.size,
 		materials: materials.size,
 		vertexMB: vertexBytes / 1048576,
@@ -535,6 +544,12 @@ function showResults() {
 	} else if ( hashes.length > 1 ) {
 
 		html += '<p class="error">✗ X3D 匯出內容不一致，請看下方每次測試的指紋。</p>';
+
+	}
+
+	if ( new Set( ok.map( ( r ) => r.meshes ) ).size > 1 ) {
+
+		html += '<p class="error">各次測試的構件數不同' + ( ok.some( ( r ) => r.overlaps > 0 ) ? '，其中有重疊構件，請確認兩個版本都已包含斗栱重疊修正' : '' ) + '。</p>';
 
 	}
 
