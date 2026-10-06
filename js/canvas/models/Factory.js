@@ -1,4 +1,44 @@
 /// <reference path="Command.js" />
+
+// Building parts (models/*.stl) are shared by all their placements: each STL is downloaded and
+// parsed only once, and all meshes of a part use the same geometry and the same material.
+// Every mesh still has its own name, position, rotation and scale, so the scene commands
+// and the exporters work as before.
+var partGeometries = {};	// part name -> geometry
+var partCallbacks = {};		// part name -> callbacks waiting for the STL to finish loading
+var partMaterial = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
+
+function loadPart(part, onLoad)
+{
+	// always call back asynchronously, like loading the STL did, so the scene commands see the
+	// same order of events as before (e.g. the duplicate check in addSevenObliquelyBracket)
+	if (partGeometries[part]) {
+		setTimeout(function () { onLoad(partGeometries[part]); }, 0);
+		return;
+	}
+
+	if (partCallbacks[part]) {
+		partCallbacks[part].push(onLoad);
+		return;
+	}
+
+	partCallbacks[part] = [onLoad];
+
+	var loader = new THREE.STLLoader();
+	loader.load('./models/' + part + '.stl', function (geometry) {
+		partGeometries[part] = geometry;
+
+		var callbacks = partCallbacks[part];
+		delete partCallbacks[part];
+
+		for (var i = 0; i < callbacks.length; i++) {
+			callbacks[i](geometry);
+		}
+	}, undefined, function () {
+		delete partCallbacks[part];	// let a later placement try again
+	});
+}
+
 function Factory()
 {
 	this.addGround = function(x_size, y_size, color, specular)
@@ -18,13 +58,11 @@ function Factory()
 	this.addBaseSpace = function(_w, _d)
 	{
 	    var mesh;
-	    var loader = new THREE.STLLoader();
 					
 		// ASCII file
-		loader.load( './models/BaseSpace.stl', function ( geometry ) {
+		loadPart( 'BaseSpace', function ( geometry ) {
 
-			var material = new THREE.MeshPhongMaterial( { color: 0xff5533, specular: 0x111111, shininess: 200 } );
-			mesh = new THREE.Mesh( geometry, material );
+			mesh = new THREE.Mesh( geometry, partMaterial );
 			mesh.userData.part = 'BaseSpace';   // source STL in models/, used by X3DExporter
 
 			mesh.position.set( 0.0, 0.023, 0.0 );
@@ -40,13 +78,11 @@ function Factory()
 	
 	this.addCenterColume = function(id, x, z)
 	{
-		var loader = new THREE.STLLoader();
 		var mesh;
 					
-		loader.load( './models/CenterColumn.stl', function ( geometry ) {
+		loadPart( 'CenterColumn', function ( geometry ) {
 
-		    var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
-			mesh = new THREE.Mesh( geometry, material );
+			mesh = new THREE.Mesh( geometry, partMaterial );
 			mesh.userData.part = 'CenterColumn';   // source STL in models/, used by X3DExporter
 
 			mesh.position.set( x, 0.055, z);
@@ -62,13 +98,11 @@ function Factory()
 	
 	this.addSecondColumn = function(id, x, z)
 	{
-		var loader = new THREE.STLLoader();
 		var mesh;
 					
-		loader.load( './models/SecondColumn.stl', function ( geometry ) {
+		loadPart( 'SecondColumn', function ( geometry ) {
 
-		    var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
-			mesh = new THREE.Mesh( geometry, material );
+			mesh = new THREE.Mesh( geometry, partMaterial );
 			mesh.userData.part = 'SecondColumn';   // source STL in models/, used by X3DExporter
 
 			mesh.position.set( x, 0.055, z );
@@ -83,13 +117,11 @@ function Factory()
 	}
 
 	this.addFiveForwardBracket = function (id, x, z, rad_y) {
-	    var loader = new THREE.STLLoader();
 	    var mesh;
 
-	    loader.load('./models/FiveForwardBracket.stl', function (geometry) {
+	    loadPart('FiveForwardBracket', function (geometry) {
 
-	        var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
-	        mesh = new THREE.Mesh(geometry, material);
+	        mesh = new THREE.Mesh(geometry, partMaterial);
 	        mesh.userData.part = 'FiveForwardBracket';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(x, 0.18, z);
@@ -104,13 +136,11 @@ function Factory()
 	}
 
 	this.addFiveObliquelyBracket = function (id, x, z, rad_y) {
-	    var loader = new THREE.STLLoader();
 	    var mesh;
 
-	    loader.load('./models/FiveObliquelyBracket.stl', function (geometry) {
+	    loadPart('FiveObliquelyBracket', function (geometry) {
 
-	        var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
-	        mesh = new THREE.Mesh(geometry, material);
+	        mesh = new THREE.Mesh(geometry, partMaterial);
 	        mesh.userData.part = 'FiveObliquelyBracket';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(x, 0.18, z);
@@ -125,13 +155,11 @@ function Factory()
 	}
 
 	this.addSevenForwardBracket = function (id, x, z, rad_y) {
-	    var loader = new THREE.STLLoader();
 	    var mesh;
 
-	    loader.load('./models/SevenForwardBracket.stl', function (geometry) {
+	    loadPart('SevenForwardBracket', function (geometry) {
 
-	        var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
-	        mesh = new THREE.Mesh(geometry, material);
+	        mesh = new THREE.Mesh(geometry, partMaterial);
 	        mesh.userData.part = 'SevenForwardBracket';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(x, 0.27, z);
@@ -146,15 +174,13 @@ function Factory()
 	}
 
 	this.addSevenObliquelyBracket = function (id, x, z, rad_y) {
-	    var loader = new THREE.STLLoader();
 	    var mesh;
 
 	    var mesh = scene.getObjectByName(id);
 	    if (mesh && mesh instanceof THREE.Mesh) { } else {
-	        loader.load('./models/SevenObliquelyBracket.stl', function (geometry) {
+	        loadPart('SevenObliquelyBracket', function (geometry) {
 
-	            var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
-	            mesh = new THREE.Mesh(geometry, material);
+	            mesh = new THREE.Mesh(geometry, partMaterial);
 	            mesh.userData.part = 'SevenObliquelyBracket';   // source STL in models/, used by X3DExporter
 
 	            mesh.position.set(x, 0.27, z);
@@ -171,13 +197,11 @@ function Factory()
 
     //ผู
 	this.addGirder = function (id, x, _y, z, _width, rad_y) {
-	    var loader = new THREE.STLLoader();
 	    var mesh;
 
-	    loader.load('./models/Girder.stl', function (geometry) {
+	    loadPart('Girder', function (geometry) {
 
-	        var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
-	        mesh = new THREE.Mesh(geometry, material);
+	        mesh = new THREE.Mesh(geometry, partMaterial);
 	        mesh.userData.part = 'Girder';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(x, _y, z);
@@ -192,13 +216,11 @@ function Factory()
 	}
 
 	this.addWall = function (id, x, z, rad_y) {
-	    var loader = new THREE.STLLoader();
 	    var mesh;
 
-	    loader.load('./models/Wall.stl', function (geometry) {
+	    loadPart('Wall', function (geometry) {
 
-	        var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
-	        mesh = new THREE.Mesh(geometry, material);
+	        mesh = new THREE.Mesh(geometry, partMaterial);
 	        mesh.userData.part = 'Wall';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(x, 0.055, z);
@@ -213,13 +235,11 @@ function Factory()
 	}
 	
 	this.addDoor = function (id, x, z, rad_y) {
-	    var loader = new THREE.STLLoader();
 	    var mesh;
 
-	    loader.load('./models/Door.stl', function (geometry) {
+	    loadPart('Door', function (geometry) {
 
-	        var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
-	        mesh = new THREE.Mesh(geometry, material);
+	        mesh = new THREE.Mesh(geometry, partMaterial);
 	        mesh.userData.part = 'Door';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(x, 0.055, z);
@@ -234,13 +254,11 @@ function Factory()
 	}
 
 	this.addWindow = function (id, x, z, rad_y) {
-	    var loader = new THREE.STLLoader();
 	    var mesh;
 
-	    loader.load('./models/Window.stl', function (geometry) {
+	    loadPart('Window', function (geometry) {
 
-	        var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
-	        mesh = new THREE.Mesh(geometry, material);
+	        mesh = new THREE.Mesh(geometry, partMaterial);
 	        mesh.userData.part = 'Window';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(x, 0.055, z);
@@ -255,13 +273,11 @@ function Factory()
 	}
 
 	this.addStair = function (id, x, z, rad_y) {
-	    var loader = new THREE.STLLoader();
 	    var mesh;
 
-	    loader.load('./models/Stair.stl', function (geometry) {
+	    loadPart('Stair', function (geometry) {
 
-	        var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
-	        mesh = new THREE.Mesh(geometry, material);
+	        mesh = new THREE.Mesh(geometry, partMaterial);
 	        mesh.userData.part = 'Stair';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(x, -0.0055, z);
@@ -276,13 +292,11 @@ function Factory()
 	}
 
 	this.addSideCorridorTopPartVirtical = function (id, _rotate_degree_y, _x, _z) {
-	    var loader = new THREE.STLLoader();
 	    var mesh;
 
-	    loader.load('./models/SideCorridorTopPartVirtical.stl', function (geometry) {
+	    loadPart('SideCorridorTopPartVirtical', function (geometry) {
 
-	        var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
-	        mesh = new THREE.Mesh(geometry, material);
+	        mesh = new THREE.Mesh(geometry, partMaterial);
 	        mesh.userData.part = 'SideCorridorTopPartVirtical';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(_x, 0.2, _z);
@@ -297,13 +311,11 @@ function Factory()
 	}
 
 	this.addMidTileInside = function (id, _x, _y, _z, _scale_rate) {
-	    var loader = new THREE.STLLoader();
 	    var mesh;
 
-	    loader.load('./models/MidTileInside.stl', function (geometry) {
+	    loadPart('MidTileInside', function (geometry) {
 
-	        var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
-	        mesh = new THREE.Mesh(geometry, material);
+	        mesh = new THREE.Mesh(geometry, partMaterial);
 	        mesh.userData.part = 'MidTileInside';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(_x, _y, _z);
@@ -318,13 +330,11 @@ function Factory()
 	}
 
 	this.addMidTileOutside = function (id, _x, _y, _z, _reotate_y, _scale_rate) {
-	    var loader = new THREE.STLLoader();
 	    var mesh;
 
-	    loader.load('./models/MidTileOutside.stl', function (geometry) {
+	    loadPart('MidTileOutside', function (geometry) {
 
-	        var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
-	        mesh = new THREE.Mesh(geometry, material);
+	        mesh = new THREE.Mesh(geometry, partMaterial);
 	        mesh.userData.part = 'MidTileOutside';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(_x, _y, _z);
@@ -339,13 +349,11 @@ function Factory()
 	}
 
 	this.addTopTileOutside = function (id, _x, _y, _z, _reotate_y, _scale_rate) {
-	    var loader = new THREE.STLLoader();
 	    var mesh;
 
-	    loader.load('./models/TopTileOutside.stl', function (geometry) {
+	    loadPart('TopTileOutside', function (geometry) {
 
-	        var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
-	        mesh = new THREE.Mesh(geometry, material);
+	        mesh = new THREE.Mesh(geometry, partMaterial);
 	        mesh.userData.part = 'TopTileOutside';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(_x, _y, _z);
@@ -360,13 +368,11 @@ function Factory()
 	}
 
 	this.addTopTileInside = function (id, _x, _y, _z, _scale_rate) {
-	    var loader = new THREE.STLLoader();
 	    var mesh;
 
-	    loader.load('./models/TopTileInside.stl', function (geometry) {
+	    loadPart('TopTileInside', function (geometry) {
 
-	        var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
-	        mesh = new THREE.Mesh(geometry, material);
+	        mesh = new THREE.Mesh(geometry, partMaterial);
 	        mesh.userData.part = 'TopTileInside';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(_x, _y, _z);
@@ -381,13 +387,11 @@ function Factory()
 	}
 
 	this.addCornerSideTile = function (id, _x, _y, _z, _reotate_y) {
-	    var loader = new THREE.STLLoader();
 	    var mesh;
 
-	    loader.load('./models/CornerTile.stl', function (geometry) {
+	    loadPart('CornerTile', function (geometry) {
 
-	        var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
-	        mesh = new THREE.Mesh(geometry, material);
+	        mesh = new THREE.Mesh(geometry, partMaterial);
 	        mesh.userData.part = 'CornerTile';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(_x, _y, _z);
@@ -402,13 +406,11 @@ function Factory()
 	}
 
 	this.addSideCornerTile = function (id, _x, _y, _z, _reotate_y) {
-	    var loader = new THREE.STLLoader();
 	    var mesh;
 
-	    loader.load('./models/SideCornerTile.stl', function (geometry) {
+	    loadPart('SideCornerTile', function (geometry) {
 
-	        var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
-	        mesh = new THREE.Mesh(geometry, material);
+	        mesh = new THREE.Mesh(geometry, partMaterial);
 	        mesh.userData.part = 'SideCornerTile';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(_x, _y, _z);
@@ -423,13 +425,11 @@ function Factory()
 	}
 
 	this.addBaseTile = function (id, _x, _y, _z, _scale_rate) {
-	    var loader = new THREE.STLLoader();
 	    var mesh;
 
-	    loader.load('./models/BaseTile.stl', function (geometry) {
+	    loadPart('BaseTile', function (geometry) {
 
-	        var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
-	        mesh = new THREE.Mesh(geometry, material);
+	        mesh = new THREE.Mesh(geometry, partMaterial);
 	        mesh.userData.part = 'BaseTile';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(_x, _y, _z);
@@ -444,13 +444,11 @@ function Factory()
 	}
 
 	this.addBaseTileOutside = function (id, _x, _y, _z, _reotate_y, _scale_rate) {
-	    var loader = new THREE.STLLoader();
 	    var mesh;
 
-	    loader.load('./models/BaseTileOutside.stl', function (geometry) {
+	    loadPart('BaseTileOutside', function (geometry) {
 
-	        var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
-	        mesh = new THREE.Mesh(geometry, material);
+	        mesh = new THREE.Mesh(geometry, partMaterial);
 	        mesh.userData.part = 'BaseTileOutside';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(_x, _y, _z);
@@ -465,13 +463,11 @@ function Factory()
 	}
 
 	this.addSideBaseTile = function (id, _x, _y, _z, _reotate_y) {
-	    var loader = new THREE.STLLoader();
 	    var mesh;
 
-	    loader.load('./models/SideBaseTile.stl', function (geometry) {
+	    loadPart('SideBaseTile', function (geometry) {
 
-	        var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
-	        mesh = new THREE.Mesh(geometry, material);
+	        mesh = new THREE.Mesh(geometry, partMaterial);
 	        mesh.userData.part = 'SideBaseTile';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(_x, _y, _z);
@@ -540,6 +536,9 @@ function Factory()
 	    var mesh = _scene.getObjectByName(id);
 	    if (mesh && mesh instanceof THREE.Mesh) {
 	        _scene.remove(mesh);
+
+	        // parts share their geometry and material (see loadPart), keep them for the other placements
+	        if (mesh.userData.part) return;
 
 	        //Release memory spaces
 	        if (mesh.material.map) {

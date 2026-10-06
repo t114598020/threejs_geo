@@ -236,6 +236,9 @@ function ModelingModel()
 	            if (obj.name != "Ground" && obj.name != "Plane") {
 	                _scene.remove(obj);
 
+	                // parts share their geometry and material (see loadPart in Factory.js), keep them
+	                if (obj.userData.part) continue;
+
 	                //Release memory spaces
 	                if (obj.material.map) {
 	                    obj.material.map.dispose();
