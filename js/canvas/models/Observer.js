@@ -47,4 +47,8 @@ function Observer()
 	this.exportSTLObserver = function () {
 	    document.getElementById('viewer').contentWindow.actExportSTL();
 	}
+
+	this.exportX3DObserver = function (_useDEF) {
+	    document.getElementById('viewer').contentWindow.actExportX3D(_useDEF);
+	}
 }

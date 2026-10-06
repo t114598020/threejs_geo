@@ -337,6 +337,11 @@ function exportStlFile() {
     obs.exportSTLObserver();
 }
 
+// _useDEF: true = repeated parts written once (DEF/USE), false = one merged mesh
+function exportX3dFile(_useDEF) {
+    obs.exportX3DObserver(_useDEF);
+}
+
 function doGetMidLine() {
     return my_model.getMidLine();
 }

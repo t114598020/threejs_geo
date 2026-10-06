@@ -25,6 +25,7 @@ function Factory()
 
 			var material = new THREE.MeshPhongMaterial( { color: 0xff5533, specular: 0x111111, shininess: 200 } );
 			mesh = new THREE.Mesh( geometry, material );
+			mesh.userData.part = 'BaseSpace';   // source STL in models/, used by X3DExporter
 
 			mesh.position.set( 0.0, 0.023, 0.0 );
 			mesh.rotation.set( 0, Math.PI / 2, 0 );
@@ -46,6 +47,7 @@ function Factory()
 
 		    var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
 			mesh = new THREE.Mesh( geometry, material );
+			mesh.userData.part = 'CenterColumn';   // source STL in models/, used by X3DExporter
 
 			mesh.position.set( x, 0.055, z);
 			mesh.rotation.set( - Math.PI / 2, 0, 0 );
@@ -67,6 +69,7 @@ function Factory()
 
 		    var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
 			mesh = new THREE.Mesh( geometry, material );
+			mesh.userData.part = 'SecondColumn';   // source STL in models/, used by X3DExporter
 
 			mesh.position.set( x, 0.055, z );
 			mesh.rotation.set( - Math.PI / 2, 0, 0 );
@@ -87,6 +90,7 @@ function Factory()
 
 	        var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
 	        mesh = new THREE.Mesh(geometry, material);
+	        mesh.userData.part = 'FiveForwardBracket';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(x, 0.18, z);
 	        mesh.rotation.set(0, Math.PI / 2 + rad_y, 0);
@@ -107,6 +111,7 @@ function Factory()
 
 	        var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
 	        mesh = new THREE.Mesh(geometry, material);
+	        mesh.userData.part = 'FiveObliquelyBracket';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(x, 0.18, z);
 	        mesh.rotation.set(0, rad_y, 0);
@@ -127,6 +132,7 @@ function Factory()
 
 	        var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
 	        mesh = new THREE.Mesh(geometry, material);
+	        mesh.userData.part = 'SevenForwardBracket';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(x, 0.27, z);
 	        mesh.rotation.set(0, Math.PI / 2 + rad_y, 0);
@@ -149,6 +155,7 @@ function Factory()
 
 	            var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
 	            mesh = new THREE.Mesh(geometry, material);
+	            mesh.userData.part = 'SevenObliquelyBracket';   // source STL in models/, used by X3DExporter
 
 	            mesh.position.set(x, 0.27, z);
 	            mesh.rotation.set(0, rad_y, 0);
@@ -171,6 +178,7 @@ function Factory()
 
 	        var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
 	        mesh = new THREE.Mesh(geometry, material);
+	        mesh.userData.part = 'Girder';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(x, _y, z);
 	        mesh.rotation.set(0, rad_y, 0);
@@ -191,6 +199,7 @@ function Factory()
 
 	        var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
 	        mesh = new THREE.Mesh(geometry, material);
+	        mesh.userData.part = 'Wall';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(x, 0.055, z);
 	        mesh.rotation.set(0, rad_y, 0);
@@ -211,6 +220,7 @@ function Factory()
 
 	        var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
 	        mesh = new THREE.Mesh(geometry, material);
+	        mesh.userData.part = 'Door';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(x, 0.055, z);
 	        mesh.rotation.set(0, rad_y, 0);
@@ -231,6 +241,7 @@ function Factory()
 
 	        var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
 	        mesh = new THREE.Mesh(geometry, material);
+	        mesh.userData.part = 'Window';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(x, 0.055, z);
 	        mesh.rotation.set(0, rad_y, 0);
@@ -251,6 +262,7 @@ function Factory()
 
 	        var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
 	        mesh = new THREE.Mesh(geometry, material);
+	        mesh.userData.part = 'Stair';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(x, -0.0055, z);
 	        mesh.rotation.set(0, rad_y, 0);
@@ -271,6 +283,7 @@ function Factory()
 
 	        var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
 	        mesh = new THREE.Mesh(geometry, material);
+	        mesh.userData.part = 'SideCorridorTopPartVirtical';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(_x, 0.2, _z);
 	        mesh.rotation.set(0, _rotate_degree_y, 0);
@@ -291,6 +304,7 @@ function Factory()
 
 	        var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
 	        mesh = new THREE.Mesh(geometry, material);
+	        mesh.userData.part = 'MidTileInside';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(_x, _y, _z);
 	        mesh.rotation.set(0, 0, 0);
@@ -311,6 +325,7 @@ function Factory()
 
 	        var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
 	        mesh = new THREE.Mesh(geometry, material);
+	        mesh.userData.part = 'MidTileOutside';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(_x, _y, _z);
 	        mesh.rotation.set(0, _reotate_y, 0);
@@ -331,6 +346,7 @@ function Factory()
 
 	        var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
 	        mesh = new THREE.Mesh(geometry, material);
+	        mesh.userData.part = 'TopTileOutside';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(_x, _y, _z);
 	        mesh.rotation.set(0, _reotate_y, 0);
@@ -351,6 +367,7 @@ function Factory()
 
 	        var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
 	        mesh = new THREE.Mesh(geometry, material);
+	        mesh.userData.part = 'TopTileInside';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(_x, _y, _z);
 	        mesh.rotation.set(0, 0, 0);
@@ -371,6 +388,7 @@ function Factory()
 
 	        var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
 	        mesh = new THREE.Mesh(geometry, material);
+	        mesh.userData.part = 'CornerTile';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(_x, _y, _z);
 	        mesh.rotation.set(0,_reotate_y, 0.1);
@@ -391,6 +409,7 @@ function Factory()
 
 	        var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
 	        mesh = new THREE.Mesh(geometry, material);
+	        mesh.userData.part = 'SideCornerTile';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(_x, _y, _z);
 	        mesh.rotation.set(0, Math.PI / 4 + _reotate_y, 0);
@@ -411,6 +430,7 @@ function Factory()
 
 	        var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
 	        mesh = new THREE.Mesh(geometry, material);
+	        mesh.userData.part = 'BaseTile';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(_x, _y, _z);
 	        mesh.rotation.set(0, 0, 0);
@@ -431,6 +451,7 @@ function Factory()
 
 	        var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
 	        mesh = new THREE.Mesh(geometry, material);
+	        mesh.userData.part = 'BaseTileOutside';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(_x, _y, _z);
 	        mesh.rotation.set(0, _reotate_y, 0);
@@ -451,6 +472,7 @@ function Factory()
 
 	        var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
 	        mesh = new THREE.Mesh(geometry, material);
+	        mesh.userData.part = 'SideBaseTile';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(_x, _y, _z);
 	        mesh.rotation.set(0, _reotate_y, 0);

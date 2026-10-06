@@ -133,3 +133,12 @@ function actExportSTL() {
     handler = null;
     delete handler;
 }
+
+function actExportX3D(_useDEF) {
+    var handler = new FileHandler();
+
+    handler.X3Dexporter(scene, _useDEF);
+
+    handler = null;
+    delete handler;
+}
