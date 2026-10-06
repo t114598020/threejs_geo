@@ -1,0 +1,234 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+    <!-- <title>營造法式物件導向空間文法建築規劃系統</title> -->
+    <title>Yingzao Fashi Web3D</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.min.lp.css">
+    <link rel="stylesheet" type="text/css" href="css/landing-page.css">
+    <link rel="stylesheet" type="text/css" href="font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700,300italic,400italic,700italic">
+    <link rel="stylesheet" type="text/css" href="css/style.css">
+    <script>
+        function open_file(url) {
+            window.open(url, '_blank', 'width=900,height=600');
+        }
+    </script>
+    <style>
+        .myhover {
+            box-shadow: 0 0 1px 1px #f9eced;
+            animation-name: happy;
+            animation-duration: 1.5s;
+            animation-iteration-count: infinite;
+        }
+
+        @keyframes happy {
+            0% { transform: translateY(0px);}
+            25% {transform: translateY(-15px);}
+            50% {transform: translateY(0px);}
+            75% {transform: translateY(-5px);}
+            100% {transform: translateY(0px);}
+        }
+    </style>
+</head>
+<body>
+    <!----------------------------------- Dividing line----------------------------------------------------->
+    <!-- Header -->
+    <a name="top"></a>
+    <div class="intro-header">
+        <div class="container" style="height:1%;">
+
+            <div class="row">
+                <div class="col-lg-12" style="height:auto">
+                    <div class="intro-message">
+                        <!-- <h1>營造法式物件導向空間文法建築規劃</h1> -->
+                        <h2>Web3D Modeling Timber-Framed Architecture Layouts Using Spatial Grammars</h2>
+                        <h1 style="font-size:36pt;">Yingzao Fashi: State Building Standards</h1>
+                        <h3>Published in 1103 AD, <a href="https://en.wikipedia.org/wiki/Song_dynasty">Song dynasty</a> (960 to 1279 AD) architectural standards for architects.</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- /.container -->
+    </div>
+
+    <!-- jQuery -->
+    <script src="lib/jquery-2.1.3.min.js"></script>
+
+    <!-- Bootstrap Core JavaScript -->
+    <script src="lib/bootstrap.min.js"></script>
+
+    <div class="row">
+        <div class="panel panel-default center main_pane">
+
+            <ul id="myTab" class="nav nav-tabs">
+                <li class="active"><a href="#home" data-toggle="tab">進入系統 Creative Mode</a></li>
+                <!-- <li><a href="#d0" data-toggle="tab">參考論文</a></li> -->
+                <li><a href="#d1" data-toggle="tab">空間文法 Spatial Grammars</a></li>
+                <li><a href="#d2" data-toggle="tab">分心枓底槽 Bottom Groove</a></li>
+                <li><a href="#d3" data-toggle="tab">金箱枓底槽 Box Groove</a></li>
+                <li><a href="#d4" data-toggle="tab">單槽  Single Groove</a></li>
+                <li><a href="#d5" data-toggle="tab">雙槽 Dual Groove</a></li>
+            </ul>
+
+            <div id="myTabContent" class="tab-content">
+                <div class="tab-pane fade in active" id="home">
+                    <div class=" center sub_pane">
+                        <div class="page-header">
+                            <h2>空間文法創作系統</h2>
+                            <h2>System: Spatial Grammars</h2>
+                        </div>
+                        <br>
+                        <div style="text-align:center;">
+							<img class="center" height="300" src="imgs/systemmode.png" />
+							<br>
+							<a class="btn btn-primary btn-lg" role="button" href="SpatialGrammarLayout.html">Enter</a> <span style="color:red;">(Interactive Mode)</span> Click on applicable "Spatial Grammars" to create the layout step by step.
+							<br>
+							<br>
+                            <a class="btn btn-primary btn-lg myhover" role="button" href="VariedPalace.html">Enter Demo</a> <span style="color:red;">(Automatic Mode)</span> Click on "Start", then keep clicking on "Next Step" for random creation.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="d0">
+                    <div class="center sub_pane">
+                        <div class="page-header">
+                            <h2>參考論文</h2>
+                        </div>
+                        <p>高小倩，中國古代「宮室殿堂」空間文法建構的研究－－以《營造法式》為例，碩士論文，國立雲林科技大學，雲林，2002。</p>
+                        <a href="http://handle.ncl.edu.tw/11296/ndltd/08303295874238445930" target="_blank">文獻來源</a>
+                        <br><br>
+                        <p>許紋斌，營造法式殿閣地盤空間文法佈局，碩士論文，國立臺北科技大學，臺北，2015。</p>
+                        <a href="http://handle.ncl.edu.tw/11296/ndltd/75931092454064425382" target="_blank">文獻來源</a>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="d1">
+                    <div class="center sub_pane">
+                        <div class="page-header">
+                            <h2>空間文法之規則對照</h2>
+                            <h2>Tutorial:  Yingzao Fashi Spatial Grammars</h2>
+                        </div>
+                        <img class="center" height="300" src="imgs/Rule_comparation_demo.jpg" />
+                        <br>
+                        <div style="text-align:center;">
+                            <a class="btn btn-primary btn-lg" role="button" href="RulesIllustrate/Rules.html">(1) 殿身間架模數 Grid<br>(2) 分槽 Groove Layout<br>(3) 鋪作與落住 Bracket & Column<br>(4) 牆身 Wall<br>(5) 門窗 Door & Window<br>(6) 階梯 Staircase</a>
+							<br>
+							<br>
+							<a class="btn btn-primary btn-lg" role="button" href="RoofIllustrate/Rules.html">(7 )屋頂 Roof</a>
+							<br>
+							<br>
+							<a class="btn btn-primary btn-lg" role="button" href="RulesIntegrate/Rules.html">階段規則整合 Grammar Table</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="d2">
+                    <div class=" center sub_pane">
+                        <div class="page-header">
+                            <h2>殿閣身地盤殿身九間身內分心斗底槽</h2>
+                            <h2>Demo: Bottom Groove Layout</h2>
+                            <address>
+                                <a class="btn btn-primary btn-lg" role="button" href="TDBGDownloader.html">Download STL Model</a>
+                            </address>
+                        </div>
+                        <img class="center" height="400" src="imgs/cp01.jpg" />
+                        <br>
+                        <div style="text-align:center;">
+                            <a class="btn btn-primary btn-lg myhover" role="button" href="TuDistractionBottomGroove.html">Enter Demo</a> Click "Start", then Click "Resume". Sit down, relex, and watch.<br><br>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="d3">
+                    <div class=" center sub_pane">
+                        <div class="page-header">
+                            <h2>殿閣地盤殿身七間副階周匝各兩架椽身內金箱斗底槽</h2>
+                            <h2>Demo: Box Groove Layout</h2>
+                            <address>
+                                <a class="btn btn-primary btn-lg" role="button" href="KTBBGDownloader.html">Download STL Model</a>
+                            </address>
+                        </div>
+                        <img class="center" height="400" src="imgs/cp02.png" />
+                        <br>
+                        <div style="text-align:center;">
+                            <a class="btn btn-primary btn-lg myhover" role="button" href="KimTuBoxBottomGroove.html">Enter Demo</a> Click "Start", then Click "Resume". Sit down, relex, and watch.<br><br>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="d4">
+                    <div class=" center sub_pane">
+                        <div class="page-header">
+                            <h2>殿閣地盤殿身七間副階周匝各兩架椽身內單槽</h2>
+                            <h2>Demo: Single Groove Layout</h2>
+                            <address>
+                                <a class="btn btn-primary btn-lg" role="button" href="SGDownloader.html">Download STL Model</a>
+                            </address>
+                        </div>
+                        <img class="center" height="400" src="imgs/cp03.png" />
+                        <br>
+                        <div style="text-align:center;">
+                            <a class="btn btn-primary btn-lg myhover" role="button" href="SingleGroove.html">Enter Demo</a> Click "Start", then Click "Resume". Sit down, relex, and watch.<br><br>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="d5">
+                    <div class=" center sub_pane">
+                        <div class="page-header">
+                            <h2>殿閣地盤殿身七間副階周匝各兩架椽身內雙槽</h2>
+                            <h2>Demo: Dual Groove Layout</h2>
+                            <address>
+                                <a class="btn btn-primary btn-lg" role="button" href="DGDownloader.html">Download STL Model</a>
+                            </address>
+                        </div>
+                        <img class="center" height="400" src="imgs/cp04.png" />
+                        <br>
+                        <div style="text-align:center;">
+                            <a class="btn btn-primary btn-lg myhover" role="button" href="DoubleGroove.html">Enter Demo</a> Click "Start", then Click "Resume". Sit down, relex, and watch.<br><br>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="panel panel-default center">
+            <a href="./img/29-1.png"><img src="./img/29-1.png" height="256"></a>
+            <a href="./img/28-1.png"><img src="./img/28-1.png" height="256"></a>
+            <a href="./img/28-2.png"><img src="./img/28-2.png" height="256"></a>
+            <a href="./img/29-2.png"><img src="./img/29-2.png" height="256"></a>
+        </div>
+    </div>
+
+
+    <div class="row">
+        <div class="panel panel-default center">
+            <a href="https://tjhsieh.github.io/yingzaofashi/webgl2/stl_99_001.html" target="_blank"><img src="./img/02.png" width="100%"></a>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="row">
+            </div>
+            <div class="row">
+                <div class="col-lg-12">
+                    <p class="copyright text-muted small">
+                        <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="創用 CC 授權條款" style="border-width:0" src="http://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a><span xmlns:dct="http://purl.org/dc/terms/" href="http://purl.org/dc/dcmitype/InteractiveResource" property="dct:title" rel="dct:type"></span><br>
+                        營造法式物件導向空間文法規劃系統，由<a xmlns:cc="http://creativecommons.org/ns#" href="http://www.cc.ntut.edu.tw/~tjhsieh/" property="cc:attributionName" rel="cc:attributionURL">國立臺北科技大學資訊工程系計算機圖學實驗室</a>製作，
+                        以<a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">創用CC 姓名標示-非商業性-相同方式分享 4.0 國際 授權條款</a>釋出。
+                        姓名標示-非商業性-相同方式分享 CC BY-NC-SA
+                        本授權條款允許使用者對本著作進行重混、調整，以及依原著作建立新著作，但僅限於非商業目的之使用。唯使用者就其新創著作，必須按照表彰
+                        原作：國立臺北科技大學資訊工程系計算機圖學實驗室，並且將產出之新創著作採用相同的授權條款釋出。
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>
