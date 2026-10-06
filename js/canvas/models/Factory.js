@@ -152,6 +152,8 @@ function Factory()
 	    var mesh = scene.getObjectByName(id);
 	    if (mesh && mesh instanceof THREE.Mesh) { } else {
 	        loader.load('./models/SevenObliquelyBracket.stl', function (geometry) {
+	            // a bracket with this name may have been added while the STL was loading
+	            if (scene.getObjectByName(id)) return;
 
 	            var material = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
 	            mesh = new THREE.Mesh(geometry, material);
