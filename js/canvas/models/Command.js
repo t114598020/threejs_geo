@@ -26,19 +26,27 @@ function CancelColumnsCommand(_scene, _fac, _coors) {
 
     this.execute = function(){
         for (var i = 0; i < _coors.length; i++) {
-            var coor = { x: _coors[i].x, z: _coors[i].z };
-            my_coors.push(coor);
             var id = idInCode(_coors[i].x, _coors[i].z);
-            while (_scene.getObjectByName(id)) {
+
+            // remember the kind of column and how many placements it had, so undo puts all of them back
+            var coor = { x: _coors[i].x, z: _coors[i].z, part: null, count: 0 };
+            var mesh;
+            while ((mesh = _scene.getObjectByName(id))) {
+                coor.part = mesh.userData.part;
                 _fac.removeMesh(_scene, id);
+                coor.count++;
             }
+            my_coors.push(coor);
         }
     }
 
     this.undo = function(){
         for (var i = 0; i < my_coors.length; i++) {
             var id = idInCode(my_coors[i].x, my_coors[i].z);
-            _fac.addCenterColume(id, my_coors[i].x, my_coors[i].z);
+            for (var j = 0; j < my_coors[i].count; j++) {
+                if (my_coors[i].part == 'SecondColumn') _fac.addSecondColumn(id, my_coors[i].x, my_coors[i].z);
+                else _fac.addCenterColume(id, my_coors[i].x, my_coors[i].z);
+            }
         }
     }
 }

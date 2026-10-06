@@ -416,6 +416,8 @@ function drawL1(_ctrl, _svg, _cmd_mgr, _spaces, _type) {
     var lines_arr = [];
     var coor = {};
     for (var i = 0; i < _spaces.length; i++) {
+        dots = [];      // every space gets its own corners and outline
+        lines = [];
         var space = _spaces[i];
 
         coor = { x: space.getX(), y: space.getY() };
