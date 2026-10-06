@@ -111,10 +111,21 @@ const METRICS = [
 	[ 'firstRenderMs', '第一次繪製 (ms)', 0 ],
 	[ 'frameMedianMs', '每幀中位數 (ms)', 1 ],
 	[ 'frameMinMs', '每幀最快 (ms)', 1 ],
+	[ 'maxFps', '最高 FPS（1000 ÷ 每幀最快）', 0 ],
 	[ 'frameMaxMs', '每幀最慢 (ms)', 1 ],
 	[ 'drawCalls', 'draw call', 0 ],
 	[ 'x3dBytes', 'X3D 大小 (bytes)', 0 ]
 ];
+
+// value of a metric in a result; derived metrics are computed here, so results saved before
+// they existed show them too
+function metricValue( result, key ) {
+
+	if ( key === 'maxFps' ) return result.frameMinMs ? 1000 / result.frameMinMs : null;
+
+	return result[ key ] === undefined ? null : result[ key ];
+
+}
 
 // ---- state, kept across the page reloads between runs ------------------------------------------
 
@@ -248,7 +259,7 @@ $( 'csv' ).onclick = function () {
 
 	const header = [ '輪次', '版本', '路徑', ...METRICS.map( ( m ) => m[ 1 ] ), 'X3D 指紋', '畫布大小', '備註' ];
 	const rows = state.results.map( ( r ) => [
-		r.round, r.version, r.path, ...METRICS.map( ( m ) => r.error ? '' : r[ m[ 0 ] ] ), r.x3dHash || '', r.canvas || '', notes( r )
+		r.round, r.version, r.path, ...METRICS.map( ( m ) => r.error ? '' : metricValue( r, m[ 0 ] ) ), r.x3dHash || '', r.canvas || '', notes( r )
 	] );
 	const csv = [ header, ...rows ].map( ( row ) => row.map( csvCell ).join( ',' ) ).join( '\r\n' );
 
@@ -505,7 +516,7 @@ function showResults() {
 
 		for ( const name of names ) {
 
-			const values = ok.filter( ( r ) => r.version === name && r[ key ] !== null ).map( ( r ) => r[ key ] );
+			const values = ok.map( ( r ) => r.version === name ? metricValue( r, key ) : null ).filter( ( v ) => v !== null );
 
 			if ( values.length === 0 ) {
 
@@ -574,7 +585,12 @@ function showResults() {
 
 		}
 
-		runs += METRICS.map( ( [ key, , decimals ] ) => '<td>' + ( r[ key ] === null ? '–' : format( r[ key ], decimals ) ) + '</td>' ).join( '' );
+		runs += METRICS.map( ( [ key, , decimals ] ) => {
+
+			const value = metricValue( r, key );
+			return '<td>' + ( value === null ? '–' : format( value, decimals ) ) + '</td>';
+
+		} ).join( '' );
 		runs += '<td>' + ( r.x3dHash || '–' ) + '</td><td style="text-align:left">' + escapeHtml( notes( r ) ) + '</td></tr>';
 
 	}
