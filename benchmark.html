@@ -86,7 +86,8 @@
 const STORAGE_KEY = 'generator-benchmark';
 const QUIET_MS = 5000;			// generation is done when no part was added for this long
 const TIMEOUT_MS = 5 * 60 * 1000;	// give up on a run after this long
-const FRAME_SAMPLES = 10;
+const WARMUP_MS = 2000;			// keep drawing this long before timing frames
+const FRAME_SAMPLES = 60;
 
 const DEFAULT_CONFIG = {
 	versions: [
@@ -433,21 +434,28 @@ async function runOnce( version, config ) {
 
 	}
 
-	// render timings; gl.finish() waits until the GPU is done
+	// render timings; reading back one pixel waits until the GPU has drawn the frame
+	// (gl.finish() returns right away in Chrome, which left the GPU time out)
 
 	const renderer = viewer.renderer;
 	const gl = renderer.getContext();
+	const pixel = new Uint8Array( 4 );
 
 	const renderOnce = () => {
 
 		const t = performance.now();
 		renderer.render( viewer.scene, viewer.camera );
-		gl.finish();
+		gl.readPixels( 0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel );
 		return performance.now() - t;
 
 	};
 
 	const firstRenderMs = renderOnce();
+
+	// the GPU slows down while nothing is drawn (e.g. while the preview is paused during the
+	// generation), so draw for a while before timing frames, until it runs at full speed again
+	const warmupEnd = performance.now() + WARMUP_MS;
+	while ( performance.now() < warmupEnd ) renderOnce();
 
 	const frames = [];
 	for ( let i = 0; i < FRAME_SAMPLES; i ++ ) frames.push( renderOnce() );
