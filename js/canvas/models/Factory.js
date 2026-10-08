@@ -8,6 +8,28 @@ var partGeometries = {};	// part name -> geometry
 var partCallbacks = {};		// part name -> callbacks waiting for the STL to finish loading
 var partMaterial = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
 
+// Parts can be colored by group (see setPartColor). All parts of a group share one material,
+// and parts that are in no group keep sharing partMaterial.
+var partGroups = { CenterColumn: 'column', SecondColumn: 'column' };
+var partMaterials = { default: partMaterial };
+
+function getGroupMaterial(group)
+{
+	if (!partMaterials[group]) partMaterials[group] = partMaterial.clone();
+	return partMaterials[group];
+}
+
+function getPartMaterial(part)
+{
+	return getGroupMaterial(partGroups[part] || 'default');
+}
+
+// changes the color of every part of a group at once, also of the parts placed later
+function setPartColor(group, color)
+{
+	getGroupMaterial(group).color.set(color);
+}
+
 function loadPart(part, onLoad)
 {
 	// always call back asynchronously, like loading the STL did, so the scene commands see the
@@ -123,7 +145,7 @@ function Factory()
 		// ASCII file
 		loadPart( 'BaseSpace', function ( geometry ) {
 
-			mesh = new THREE.Mesh( geometry, partMaterial );
+			mesh = new THREE.Mesh( geometry, getPartMaterial('BaseSpace') );
 			mesh.userData.part = 'BaseSpace';   // source STL in models/, used by X3DExporter
 
 			mesh.position.set( 0.0, 0.023, 0.0 );
@@ -143,7 +165,7 @@ function Factory()
 					
 		loadPart( 'CenterColumn', function ( geometry ) {
 
-			mesh = new THREE.Mesh( geometry, partMaterial );
+			mesh = new THREE.Mesh( geometry, getPartMaterial('CenterColumn') );
 			mesh.userData.part = 'CenterColumn';   // source STL in models/, used by X3DExporter
 
 			mesh.position.set( x, 0.055, z);
@@ -163,7 +185,7 @@ function Factory()
 					
 		loadPart( 'SecondColumn', function ( geometry ) {
 
-			mesh = new THREE.Mesh( geometry, partMaterial );
+			mesh = new THREE.Mesh( geometry, getPartMaterial('SecondColumn') );
 			mesh.userData.part = 'SecondColumn';   // source STL in models/, used by X3DExporter
 
 			mesh.position.set( x, 0.055, z );
@@ -182,7 +204,7 @@ function Factory()
 
 	    loadPart('FiveForwardBracket', function (geometry) {
 
-	        mesh = new THREE.Mesh(geometry, partMaterial);
+	        mesh = new THREE.Mesh(geometry, getPartMaterial('FiveForwardBracket'));
 	        mesh.userData.part = 'FiveForwardBracket';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(x, 0.18, z);
@@ -201,7 +223,7 @@ function Factory()
 
 	    loadPart('FiveObliquelyBracket', function (geometry) {
 
-	        mesh = new THREE.Mesh(geometry, partMaterial);
+	        mesh = new THREE.Mesh(geometry, getPartMaterial('FiveObliquelyBracket'));
 	        mesh.userData.part = 'FiveObliquelyBracket';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(x, 0.18, z);
@@ -220,7 +242,7 @@ function Factory()
 
 	    loadPart('SevenForwardBracket', function (geometry) {
 
-	        mesh = new THREE.Mesh(geometry, partMaterial);
+	        mesh = new THREE.Mesh(geometry, getPartMaterial('SevenForwardBracket'));
 	        mesh.userData.part = 'SevenForwardBracket';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(x, 0.27, z);
@@ -239,7 +261,7 @@ function Factory()
 
 	    loadPart('SevenObliquelyBracket', function (geometry) {
 
-	        mesh = new THREE.Mesh(geometry, partMaterial);
+	        mesh = new THREE.Mesh(geometry, getPartMaterial('SevenObliquelyBracket'));
 	        mesh.userData.part = 'SevenObliquelyBracket';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(x, 0.27, z);
@@ -259,7 +281,7 @@ function Factory()
 
 	    loadPart('Girder', function (geometry) {
 
-	        mesh = new THREE.Mesh(geometry, partMaterial);
+	        mesh = new THREE.Mesh(geometry, getPartMaterial('Girder'));
 	        mesh.userData.part = 'Girder';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(x, _y, z);
@@ -278,7 +300,7 @@ function Factory()
 
 	    loadPart('Wall', function (geometry) {
 
-	        mesh = new THREE.Mesh(geometry, partMaterial);
+	        mesh = new THREE.Mesh(geometry, getPartMaterial('Wall'));
 	        mesh.userData.part = 'Wall';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(x, 0.055, z);
@@ -297,7 +319,7 @@ function Factory()
 
 	    loadPart('Door', function (geometry) {
 
-	        mesh = new THREE.Mesh(geometry, partMaterial);
+	        mesh = new THREE.Mesh(geometry, getPartMaterial('Door'));
 	        mesh.userData.part = 'Door';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(x, 0.055, z);
@@ -316,7 +338,7 @@ function Factory()
 
 	    loadPart('Window', function (geometry) {
 
-	        mesh = new THREE.Mesh(geometry, partMaterial);
+	        mesh = new THREE.Mesh(geometry, getPartMaterial('Window'));
 	        mesh.userData.part = 'Window';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(x, 0.055, z);
@@ -335,7 +357,7 @@ function Factory()
 
 	    loadPart('Stair', function (geometry) {
 
-	        mesh = new THREE.Mesh(geometry, partMaterial);
+	        mesh = new THREE.Mesh(geometry, getPartMaterial('Stair'));
 	        mesh.userData.part = 'Stair';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(x, -0.0055, z);
@@ -354,7 +376,7 @@ function Factory()
 
 	    loadPart('SideCorridorTopPartVirtical', function (geometry) {
 
-	        mesh = new THREE.Mesh(geometry, partMaterial);
+	        mesh = new THREE.Mesh(geometry, getPartMaterial('SideCorridorTopPartVirtical'));
 	        mesh.userData.part = 'SideCorridorTopPartVirtical';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(_x, 0.2, _z);
@@ -373,7 +395,7 @@ function Factory()
 
 	    loadPart('MidTileInside', function (geometry) {
 
-	        mesh = new THREE.Mesh(geometry, partMaterial);
+	        mesh = new THREE.Mesh(geometry, getPartMaterial('MidTileInside'));
 	        mesh.userData.part = 'MidTileInside';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(_x, _y, _z);
@@ -392,7 +414,7 @@ function Factory()
 
 	    loadPart('MidTileOutside', function (geometry) {
 
-	        mesh = new THREE.Mesh(geometry, partMaterial);
+	        mesh = new THREE.Mesh(geometry, getPartMaterial('MidTileOutside'));
 	        mesh.userData.part = 'MidTileOutside';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(_x, _y, _z);
@@ -411,7 +433,7 @@ function Factory()
 
 	    loadPart('TopTileOutside', function (geometry) {
 
-	        mesh = new THREE.Mesh(geometry, partMaterial);
+	        mesh = new THREE.Mesh(geometry, getPartMaterial('TopTileOutside'));
 	        mesh.userData.part = 'TopTileOutside';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(_x, _y, _z);
@@ -430,7 +452,7 @@ function Factory()
 
 	    loadPart('TopTileInside', function (geometry) {
 
-	        mesh = new THREE.Mesh(geometry, partMaterial);
+	        mesh = new THREE.Mesh(geometry, getPartMaterial('TopTileInside'));
 	        mesh.userData.part = 'TopTileInside';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(_x, _y, _z);
@@ -449,7 +471,7 @@ function Factory()
 
 	    loadPart('CornerTile', function (geometry) {
 
-	        mesh = new THREE.Mesh(geometry, partMaterial);
+	        mesh = new THREE.Mesh(geometry, getPartMaterial('CornerTile'));
 	        mesh.userData.part = 'CornerTile';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(_x, _y, _z);
@@ -468,7 +490,7 @@ function Factory()
 
 	    loadPart('SideCornerTile', function (geometry) {
 
-	        mesh = new THREE.Mesh(geometry, partMaterial);
+	        mesh = new THREE.Mesh(geometry, getPartMaterial('SideCornerTile'));
 	        mesh.userData.part = 'SideCornerTile';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(_x, _y, _z);
@@ -487,7 +509,7 @@ function Factory()
 
 	    loadPart('BaseTile', function (geometry) {
 
-	        mesh = new THREE.Mesh(geometry, partMaterial);
+	        mesh = new THREE.Mesh(geometry, getPartMaterial('BaseTile'));
 	        mesh.userData.part = 'BaseTile';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(_x, _y, _z);
@@ -506,7 +528,7 @@ function Factory()
 
 	    loadPart('BaseTileOutside', function (geometry) {
 
-	        mesh = new THREE.Mesh(geometry, partMaterial);
+	        mesh = new THREE.Mesh(geometry, getPartMaterial('BaseTileOutside'));
 	        mesh.userData.part = 'BaseTileOutside';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(_x, _y, _z);
@@ -525,7 +547,7 @@ function Factory()
 
 	    loadPart('SideBaseTile', function (geometry) {
 
-	        mesh = new THREE.Mesh(geometry, partMaterial);
+	        mesh = new THREE.Mesh(geometry, getPartMaterial('SideBaseTile'));
 	        mesh.userData.part = 'SideBaseTile';   // source STL in models/, used by X3DExporter
 
 	        mesh.position.set(_x, _y, _z);

@@ -51,4 +51,8 @@ function Observer()
 	this.exportX3DObserver = function (_useDEF) {
 	    document.getElementById('viewer').contentWindow.actExportX3D(_useDEF);
 	}
+
+	this.setPartColorObserver = function (_group, _color) {
+	    document.getElementById('viewer').contentWindow.actSetPartColor(_group, _color);
+	}
 }
