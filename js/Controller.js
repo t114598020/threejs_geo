@@ -95,8 +95,7 @@ function createNewLayoutMap() {
     var side_corr_flag = $("input[name='SideCorridor']").prop("checked");
 
     if (w > 2 && h > 2) {
-        if (side_corr_flag && h < 5) alert("有副階縱向間數不得小於五間!");
-        else if (side_corr_flag && w < 4) alert("有副階橫向間數不得小於四間!");
+        if (side_corr_flag && w < 4) alert("有副階橫向間數不得小於四間!");
         else if (side_corr_flag && h > 9) alert("有副階縱向間數不得大於九間!");
         else if (!side_corr_flag && h > 8) alert("無副階縱向間數不得大於八間!");
         else if (w % 2 == 1) {
