@@ -100,6 +100,10 @@ function actAddRoof(_data) {
     model.addRoof(scene, _data);
 }
 
+function actSetPartColor(_group, _color) {
+    setPartColor(_group, _color);
+}
+
 function onWindowResize() {
 
 	camera.aspect = window.innerWidth / window.innerHeight;

@@ -234,6 +234,9 @@ function updateMessage(_svg, className, text, color, x_offset, y_offset) {
 }
 
 function updateCurrentStage(_svg, _stage_level) {
+    // the column colors belong to stage 1, where the columns are placed
+    $("#PartColors").toggle(_stage_level == 1);
+
     var offset_x = 40, offset_y = 65;
     var stage = ["階段一", "階段二", "階段三", "階段四", "階段五", "階段六", "階段七"];
     var stage_topic = ["地盤開間", "分槽", "鋪作", "牆身", "門窗", "階梯", "屋頂"];
@@ -297,6 +300,13 @@ function initSvg() {
     svg.append("g").attr("id", "dot");
     svg.append("g").attr("id", "text");
 
+}
+
+function setColumnColor(_color, _button) {
+    obs.setPartColorObserver("column", _color);
+
+    $("#PartColors button").removeClass("active");
+    $(_button).addClass("active");
 }
 
 function exportSvgFile() {
