@@ -128,3 +128,7 @@ body {
 .foot_pane {
     width: 1000px;
 }
+
+/* painting templates (js/PaintTemplates.js): between the stage labels and the plan, left of the preview (.canvas_container) */
+.part-colors { position: absolute; top: 105px; left: 40px; right: calc(45% + 10px); z-index: 1; font-size: 16px; line-height: 30px; }
+.part-colors .swatch { display: inline-block; width: 7px; height: 14px; margin-right: 0; vertical-align: -2px; border: 1px solid #999; }

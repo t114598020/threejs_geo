@@ -7,11 +7,6 @@
     <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="css/style.css">
     <link rel="stylesheet" href="css/animate.min.css">
-    <style>
-        /* painting templates, between the stage labels and the plan (the preview takes the right 45%, see .canvas_container) */
-        .part-colors { position: absolute; top: 105px; left: 40px; right: calc(45% + 10px); z-index: 1; font-size: 16px; line-height: 30px; }
-        .part-colors .swatch { display: inline-block; width: 7px; height: 14px; margin-right: 0; vertical-align: -2px; border: 1px solid #999; }
-    </style>
 
     <script src="lib/jquery-2.1.3.min.js"></script>
     <script src="lib/d3.min.js"></script>
@@ -30,6 +25,7 @@
     <script src="js/Colors.js"></script>
     <script src="js/CommandManager.js"></script>
     <script src="js/canvas/models/Observer.js"></script>
+    <script src="js/PaintTemplates.js"></script>
     <script src="js/FileHandler.js"></script>
     <script src="js/UIAnimater.js"></script>
 
@@ -80,18 +76,7 @@
         </ul>
     </div>
 
-    <div id="space" class="space">
-        <div id="PartColors" class="part-colors" style="display: none;">
-            彩畫：
-            <button type="button" class="btn btn-default btn-xs active" title="柱 #ff5533／鋪作 #ff5533／樑 #ff5533" onclick="setPaintTemplate('original', this)"><span class="swatch" style="background: #ff5533;"></span><span class="swatch" style="background: #ff5533;"></span><span class="swatch" style="background: #ff5533;"></span> 原色</button>
-            <button type="button" class="btn btn-default btn-xs" title="柱 #c52f2e／鋪作 #b0413d／樑 #b0413d（柱、樑貼彩畫圖）" onclick="setPaintTemplate('wucai', this)"><span class="swatch" style="background: #c52f2e;"></span><span class="swatch" style="background: #b0413d;"></span><span class="swatch" style="background: #b0413d;"></span> 五彩遍裝</button>
-            <button type="button" class="btn btn-default btn-xs" title="柱 #2c2346／鋪作 #3d4125／樑 #3d4125（柱、樑貼彩畫圖）" onclick="setPaintTemplate('nianyu', this)"><span class="swatch" style="background: #2c2346;"></span><span class="swatch" style="background: #3d4125;"></span><span class="swatch" style="background: #3d4125;"></span> 碾玉裝</button>
-            <button type="button" class="btn btn-default btn-xs" title="柱 #547136／鋪作 斗 #59723d（棱 #0c0599）、栱昂 #0c0599（棱 #59723d）／樑 #0c0599" onclick="setPaintTemplate('lengjian', this)"><span class="swatch" style="background: #547136;"></span><span class="swatch" style="background: linear-gradient(#59723d 50%, #0c0599 50%);"></span><span class="swatch" style="background: #0c0599;"></span> 青綠疊暈棱間裝</button>
-            <button type="button" class="btn btn-default btn-xs" title="柱 #536436／鋪作 #a01511／樑 #a61a18" onclick="setPaintTemplate('jielu', this)"><span class="swatch" style="background: #536436;"></span><span class="swatch" style="background: #a01511;"></span><span class="swatch" style="background: #a61a18;"></span> 解綠裝</button>
-            <button type="button" class="btn btn-default btn-xs" title="柱 #c5130f／鋪作 #ab1c12／樑 #bc1913" onclick="setPaintTemplate('danfen', this)"><span class="swatch" style="background: #c5130f;"></span><span class="swatch" style="background: #ab1c12;"></span><span class="swatch" style="background: #bc1913;"></span> 丹粉刷飾</button>
-            <button type="button" class="btn btn-default btn-xs" title="柱 #ffd240／鋪作 #fdbb3c／樑 #ffc73d" onclick="setPaintTemplate('tuhuang', this)"><span class="swatch" style="background: #ffd240;"></span><span class="swatch" style="background: #fdbb3c;"></span><span class="swatch" style="background: #ffc73d;"></span> 土黃刷飾</button>
-        </div>
-    </div>
+    <div id="space" class="space"></div>
 
     <div id="canvas_container" class="canvas_container">
         <iframe id="viewer" allowfullscreen onmousewheel src="Canvas.html"></iframe>

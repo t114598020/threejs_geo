@@ -234,7 +234,7 @@ function updateMessage(_svg, className, text, color, x_offset, y_offset) {
 }
 
 function updateCurrentStage(_svg, _stage_level) {
-    // the painting templates apply to columns (stage 1), brackets (鋪作) and girders (stage 3)
+    // the painting templates (js/PaintTemplates.js), once a layout has started
     $("#PartColors").show();
 
     var offset_x = 40, offset_y = 65;
@@ -300,55 +300,6 @@ function initSvg() {
     svg.append("g").attr("id", "dot");
     svg.append("g").attr("id", "text");
 
-}
-
-/************************************************
-                Painting templates (彩畫)
-*************************************************/
-// representative main colors of the painting styles of the Yingzao Fashi, per group of parts
-// (see partGroups in Painting.js), sampled from Wu Mei's restoration (fig. 0.2): for each part the
-// median of the pixels of the hue that covers most of it. The 鋪作 have two colors, for their 斗
-// (dou, the bearing blocks) and for their 栱 and 昂 (bracket, the arms), and "<…>_edge" gives
-// them edge bands (棱間裝). The roof takes the color of the girders, unless the template gives its own.
-// 青綠疊暈棱間裝 takes the lit green of the figure (the brighter quarter of its pixels) and a deep blue:
-// 斗 green with blue edges and 栱昂 blue with green edges, so that neighbors alternate (相間).
-var paint_templates = {
-    original: { column: "#ff5533", dou: "#ff5533", bracket: "#ff5533", girder: "#ff5533" },   // 原色
-    wucai: { column: "#c52f2e", dou: "#aa1100", bracket: "#aa1100", girder: "#aa1100", roof: "#aa1100" },   // 五彩遍裝：紅底，花紋另有青綠；鋪作用額的紅，屋頂同鋪作
-    nianyu: { column: "#2c2346", dou: "#3d4125", bracket: "#3d4125", girder: "#3d4125", roof: "#3d4125" },   // 碾玉裝：柱 青，鋪作與樑 綠，屋頂同鋪作
-    lengjian: { column: "#547136", dou: "#59723d", dou_edge: "#0c0599", bracket: "#0c0599", bracket_edge: "#59723d", girder: "#0c0599", roof: "#547136" },   // 青綠疊暈棱間裝：柱 綠，鋪作青綠相間（棱疊暈），樑 青，屋頂同柱
-    jielu: { column: "#536436", dou: "#a01511", bracket: "#a01511", girder: "#a61a18" },   // 解綠裝：柱 綠，鋪作與樑 土朱
-    danfen: { column: "#c5130f", dou: "#ab1c12", bracket: "#ab1c12", girder: "#bc1913" },   // 丹粉刷飾：全部 紅
-    tuhuang: { column: "#ffd240", dou: "#fdbb3c", bracket: "#fdbb3c", girder: "#ffc73d" }   // 土黃刷飾：全部 黃
-};
-
-// patterns (images in textures/, relative to Canvas.html) painted on the parts of a template;
-// the groups without one show their color
-var paint_patterns = {
-    wucai: { column: "textures/wucai_pattern.jpg", girder: "textures/wucai_pattern.jpg" },   // 五彩遍裝：柱、樑貼彩畫圖
-    nianyu: { column: "textures/nianyu_pattern.jpg", girder: "textures/nianyu_pattern.jpg" }   // 碾玉裝：柱、樑貼彩畫圖
-};
-var pattern_groups = ["column", "girder"];
-
-function setPaintTemplate(_name, _button) {
-    var colors = paint_templates[_name];
-    var patterns = paint_patterns[_name] || {};
-
-    for (var group in colors) {
-        obs.setPartColorObserver(group, colors[group]);
-    }
-
-    // edge bands only where the template has them; the roof follows the girders unless given
-    obs.setPartColorObserver("dou_edge", colors.dou_edge || null);
-    obs.setPartColorObserver("bracket_edge", colors.bracket_edge || null);
-    obs.setPartColorObserver("roof", colors.roof || colors.girder);
-
-    for (var i = 0; i < pattern_groups.length; i++) {
-        obs.setPartPatternObserver(pattern_groups[i], patterns[pattern_groups[i]] || null);
-    }
-
-    $("#PartColors button").removeClass("active");
-    $(_button).addClass("active");
 }
 
 function exportSvgFile() {
