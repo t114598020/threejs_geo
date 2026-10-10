@@ -1,34 +1,12 @@
 /// <reference path="Command.js" />
 
 // Building parts (models/*.stl) are shared by all their placements: each STL is downloaded and
-// parsed only once, and all meshes of a part use the same geometry and the same material.
+// parsed only once, and all meshes of a part use the same geometry and the same material
+// (Painting.js: the materials of the groups of parts and what the painting adds to the geometry).
 // Every mesh still has its own name, position, rotation and scale, so the scene commands
 // and the exporters work as before.
 var partGeometries = {};	// part name -> geometry
 var partCallbacks = {};		// part name -> callbacks waiting for the STL to finish loading
-var partMaterial = new THREE.MeshPhongMaterial({ color: 0xff5533, specular: 0x111111, shininess: 200 });
-
-// Parts can be colored by group (see setPartColor). All parts of a group share one material,
-// and parts that are in no group keep sharing partMaterial.
-var partGroups = { CenterColumn: 'column', SecondColumn: 'column' };
-var partMaterials = { default: partMaterial };
-
-function getGroupMaterial(group)
-{
-	if (!partMaterials[group]) partMaterials[group] = partMaterial.clone();
-	return partMaterials[group];
-}
-
-function getPartMaterial(part)
-{
-	return getGroupMaterial(partGroups[part] || 'default');
-}
-
-// changes the color of every part of a group at once, also of the parts placed later
-function setPartColor(group, color)
-{
-	getGroupMaterial(group).color.set(color);
-}
 
 function loadPart(part, onLoad)
 {
@@ -49,6 +27,7 @@ function loadPart(part, onLoad)
 	var loader = new THREE.STLLoader();
 	loader.load('./models/' + part + '.stl', function (geometry) {
 		partGeometries[part] = geometry;
+		preparePart(part, geometry);	// Painting.js
 
 		var callbacks = partCallbacks[part];
 		delete partCallbacks[part];
@@ -308,7 +287,7 @@ function Factory()
 	        mesh.scale.set(0.001, 0.0016, 0.0012);
 
 	        mesh.castShadow = true;
-	        mesh.receiveShadow = true;
+	        mesh.receiveShadow = false;	// walls stay light under the eaves (no striped shadows of the roof)
 	        mesh.name = id;
 	        placePart(mesh);
 	    });
@@ -327,7 +306,7 @@ function Factory()
 	        mesh.scale.set(0.001, 0.0017, 0.0012);
 
 	        mesh.castShadow = true;
-	        mesh.receiveShadow = true;
+	        mesh.receiveShadow = false;	// walls stay light under the eaves (no striped shadows of the roof)
 	        mesh.name = id;
 	        placePart(mesh);
 	    });
@@ -346,7 +325,7 @@ function Factory()
 	        mesh.scale.set(0.001, 0.0017, 0.0012);
 
 	        mesh.castShadow = true;
-	        mesh.receiveShadow = true;
+	        mesh.receiveShadow = false;	// walls stay light under the eaves (no striped shadows of the roof)
 	        mesh.name = id;
 	        placePart(mesh);
 	    });

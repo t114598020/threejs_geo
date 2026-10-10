@@ -88,7 +88,7 @@ THREE.X3DExporter.prototype = {
             for (i = 0; i < t.normals.length; i++) all.normals.push(t.normals[i]);
         });
         if (!meshes.length) return '';
-        return '\t\t<Shape>\n' + this.shapeContent(meshes[0], all, '\t\t\t') + '\t\t</Shape>\n';
+        return '\t\t<Shape>\n' + this.shapeContent(null, all, '\t\t\t') + '\t\t</Shape>\n';
     },
 
     // ---- helpers -------------------------------------------------------------------------------
@@ -140,8 +140,14 @@ THREE.X3DExporter.prototype = {
         return { positions: positions, normals: normals };
     },
 
+    // the color a part is shown in (getPartColor in Painting.js; the brackets are painted per vertex,
+    // so their material is white). The merged mesh (mesh = null) takes the color of the parts in no group.
+    color: function (mesh) {
+        return getPartColor(mesh ? mesh.userData.part : null);
+    },
+
     shapeContent: function (mesh, t, indent) {
-        var c = mesh.material && mesh.material.color ? mesh.material.color : new THREE.Color(0.8, 0.8, 0.8);
+        var c = this.color(mesh);
         var points = this.unique(t.positions), vectors = this.unique(t.normals);
         var coordIndex = [];
         for (var i = 0; i < points.index.length; i += 3) {

@@ -55,4 +55,8 @@ function Observer()
 	this.setPartColorObserver = function (_group, _color) {
 	    document.getElementById('viewer').contentWindow.actSetPartColor(_group, _color);
 	}
+
+	this.setPartPatternObserver = function (_group, _url) {
+	    document.getElementById('viewer').contentWindow.actSetPartPattern(_group, _url);
+	}
 }
