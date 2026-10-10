@@ -248,7 +248,8 @@ function DrawStg5Command(_svg, _ctrl, _space, _result, _lines, _type) {
     //Undo
     this.undo = function () {
         d3.selectAll("[class='" + my_id + "']").remove();
-        //Set type
+        //Set type (back to its type before, or the next step would skip this door or window)
+        _space.setType(backup_type);
         _space.setEdges(backup_edges);
         if (_space.getTopSpace())
             _space.getTopSpace().setBotEdge(backup_edges.top);
