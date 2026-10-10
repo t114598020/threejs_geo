@@ -202,6 +202,9 @@ function doNextStage() {
 }
 
 function updateCurrentStage(_svg, _stage_level) {
+    // the painting templates (js/PaintTemplates.js), once a layout has started
+    $("#PartColors").show();
+
     var offset_x = 40, offset_y = 65;
     var stage = ["階段一", "階段二", "階段三", "階段四", "階段五", "階段六", "階段七"];
     var stage_topic = ["地盤開間", "分槽", "鋪作", "牆身", "門窗", "階梯", "屋頂"];
