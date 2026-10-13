@@ -3,8 +3,8 @@
 // Every part keeps sharing its geometry with its other placements (Factory.js, loadPart), and all
 // parts of a group share one material, so painting changes a handful of materials and geometries,
 // never the meshes. What the STL files do not have is added to the shared geometry when it loads
-// (preparePart): texture coordinates for the patterns and the walls, colors per piece (鋪作, doors,
-// windows) and, for the 鋪作, where every vertex lies on its face (the edge bands of 棱間裝).
+// (preparePart): texture coordinates for the patterns and the walls, and colors per piece (鋪作,
+// doors, windows).
 
 var partGroups = {
 	BaseSpace: 'floor', Stair: 'floor',
@@ -39,7 +39,6 @@ function preparePart(part, geometry)
 
 	if (pieceRoles[part]) {
 		partPieces[part] = findPieces(geometry, pieceRoles[part]);
-		if (partGroups[part] === 'bracket') makeFaceCoords(geometry);
 		if (partGroups[part] === 'wall') makeWallUVs(geometry, partPieces[part]);
 		paintPieces(part);
 	}
@@ -50,15 +49,13 @@ function preparePart(part, geometry)
 *************************************************/
 
 // Changes the color of every part of a group at once, also of the parts placed later. A role of
-// the parts painted per piece (roleColors) takes a color the same way, and "<role>_edge" sets the
-// color of its edge bands (null: no bands).
+// the parts painted per piece (roleColors) takes a color the same way.
 function setPartColor(group, color)
 {
-	var role = roleColors[group.replace(/_edge$/, '')];
+	var role = roleColors[group];
 
 	if (role) {
-		if (/_edge$/.test(group)) role.edge = color ? new THREE.Color(color) : null;
-		else role.color.set(color);
+		role.color.set(color);
 
 		for (var part in partPieces) paintPieces(part);
 		return;
@@ -68,15 +65,6 @@ function setPartColor(group, color)
 
 	groupColors[group] = new THREE.Color(color);
 	if (!material.map) material.color.set(color);
-}
-
-// the color a part is shown in (X3DExporter): for the parts painted per piece the color of their main pieces
-function getPartColor(part)
-{
-	if (mainRoles[part]) return roleColors[mainRoles[part]].color;
-
-	var group = partGroups[part] || 'default';
-	return groupColors[group] || getGroupMaterial(group).color;
 }
 
 /************************************************
@@ -231,23 +219,17 @@ var pieceRoles = {
 	Wall: wallRole, Door: doorRole, Window: windowRole
 };
 
-// the role giving the color of the whole part (getPartColor)
-var mainRoles = {
-	FiveForwardBracket: 'bracket', FiveObliquelyBracket: 'bracket', SevenForwardBracket: 'bracket', SevenObliquelyBracket: 'bracket',
-	Wall: 'wall', Door: 'door', Window: 'frame'
-};
-
-// colors of the roles; the 鋪作 roles also have the color of their edge bands (null: none). The
-// walls, doors and windows follow the red and white halls of the reference photo (薬師寺); 0xaa1100
-// is the color that shows as its 朱 (0xd0410a) here, as the colors are not converted (paintPieces).
+// colors of the roles. The walls, doors and windows follow the red and white halls of the reference
+// photo (薬師寺); 0xaa1100 is the color that shows as its 朱 (0xd0410a) here, as the colors are not
+// converted (paintPieces).
 var roleColors = {
-	dou: { color: new THREE.Color(0xff5533), edge: null },			// 鋪作: the 斗 (bearing blocks)
-	bracket: { color: new THREE.Color(0xff5533), edge: null },		// 鋪作: the 栱 and 昂 (arms)
-	wall: { color: new THREE.Color(0xffffff), edge: null },			// wall surfaces: show the wall texture
-	door: { color: new THREE.Color(0xaa1100), edge: null },			// door leaves and sills, 朱
-	stud: { color: new THREE.Color(0xaa1100), edge: null },			// door studs, as the door for now (gold: 0xc56c0f)
-	frame: { color: new THREE.Color(0xaa1100), edge: null },		// window frames, 朱
-	lattice: { color: new THREE.Color(0x6e9a7e), edge: null }		// window bars, green
+	dou: { color: new THREE.Color(0xff5533) },			// 鋪作: the 斗 (bearing blocks)
+	bracket: { color: new THREE.Color(0xff5533) },		// 鋪作: the 栱 and 昂 (arms)
+	wall: { color: new THREE.Color(0xffffff) },			// wall surfaces: show the wall texture
+	door: { color: new THREE.Color(0xaa1100) },			// door leaves and sills, 朱
+	stud: { color: new THREE.Color(0xaa1100) },			// door studs, as the door for now (gold: 0xc56c0f)
+	frame: { color: new THREE.Color(0xaa1100) },		// window frames, 朱
+	lattice: { color: new THREE.Color(0x6e9a7e) }		// window bars, green
 };
 
 var partPieces = {};		// part name -> { roles: role per vertex, boxes: bounding box of its piece per vertex }
@@ -324,8 +306,7 @@ function findPieces(geometry, roleOf)
 	return result;
 }
 
-// Writes the colors of the roles into the vertex colors of a part (and the edge colors of the 鋪作),
-// as they are: the renderer (three.js r73) takes material colors and vertex colors as they are and
+// Writes the colors of the roles into the vertex colors of a part, as they are: the renderer (three.js r73) takes material colors and vertex colors as they are and
 // converts only textures (gammaInput, Factory.js addNewRenderer), so a color painted per piece shows
 // the same as on the material of a part, as the parts always showed in this project.
 function paintPieces(part)
@@ -333,7 +314,6 @@ function paintPieces(part)
 	var geometry = partGeometries[part], roles = partPieces[part].roles;
 	var count = roles.length;
 	var color = vertexAttribute(geometry, 'color', 3);
-	var edge = geometry.attributes.faceCoord ? vertexAttribute(geometry, 'edgeColor', 4) : null;
 
 	for (var i = 0; i < count; i++) {
 		var role = roleColors[roles[i]];
@@ -341,18 +321,9 @@ function paintPieces(part)
 		color.array[i * 3] = role.color.r;
 		color.array[i * 3 + 1] = role.color.g;
 		color.array[i * 3 + 2] = role.color.b;
-
-		if (edge) {
-			var c = role.edge || role.color;
-			edge.array[i * 4] = c.r;
-			edge.array[i * 4 + 1] = c.g;
-			edge.array[i * 4 + 2] = c.b;
-			edge.array[i * 4 + 3] = role.edge ? 1 : 0;
-		}
 	}
 
 	color.needsUpdate = true;
-	if (edge) edge.needsUpdate = true;
 }
 
 function vertexAttribute(geometry, name, size)
@@ -424,174 +395,14 @@ partMaterials.wall.map = makeWallTexture();
 partMaterials.wall.vertexColors = THREE.VertexColors;
 
 /************************************************
-				鋪作: edge bands (棱間裝)
+				鋪作
 *************************************************/
 
-// For the edge bands: groups the triangles into faces (neighbors in the same plane) and gives
-// every vertex its place on its face (faceCoord: along the longest outline edge of the face and
-// across it, from the corner) and the size of the face (faceSize). The bands of faces that are
-// not rectangles follow their bounding rectangle.
-function makeFaceCoords(geometry)
-{
-	var pos = geometry.attributes.position.array;
-	var count = pos.length / 3, triangles = count / 3;
-	var normals = [], parent = [], edges = {}, faces = {};
-	var t, k, key;
-
-	function find(i)
-	{
-		while (parent[i] !== i) {
-			parent[i] = parent[parent[i]];
-			i = parent[i];
-		}
-		return i;
-	}
-
-	function point(i)
-	{
-		return new THREE.Vector3(pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]);
-	}
-
-	function corner(i)
-	{
-		return Math.round(pos[i * 3] * 1000) + ',' + Math.round(pos[i * 3 + 1] * 1000) + ',' + Math.round(pos[i * 3 + 2] * 1000);
-	}
-
-	function edgeKey(t, k)
-	{
-		var a = corner(t * 3 + k), b = corner(t * 3 + (k + 1) % 3);
-		return a < b ? a + '|' + b : b + '|' + a;
-	}
-
-	// triangles sharing an edge and facing the same way belong to the same face
-	for (t = 0; t < triangles; t++) {
-		parent[t] = t;
-		normals[t] = new THREE.Vector3().crossVectors(point(t * 3 + 1).sub(point(t * 3)), point(t * 3 + 2).sub(point(t * 3))).normalize();
-
-		for (k = 0; k < 3; k++) {
-			key = edgeKey(t, k);
-			if (edges[key] === undefined) edges[key] = t;
-			else if (normals[edges[key]].dot(normals[t]) > 0.999) parent[find(edges[key])] = find(t);
-		}
-	}
-
-	// the outline of a face: its edges that no other triangle of the face shares
-	for (t = 0; t < triangles; t++) {
-		var face = faces[find(t)] || (faces[find(t)] = { normal: normals[t], edges: {}, u: null, min: [Infinity, Infinity], max: [-Infinity, -Infinity] });
-		for (k = 0; k < 3; k++) {
-			key = edgeKey(t, k);
-			face.edges[key] = face.edges[key] ? null : { from: t * 3 + k, to: t * 3 + (k + 1) % 3 };
-		}
-	}
-
-	// axes of a face: along its longest outline edge and across it
-	for (var root in faces) {
-		var longest = 0;
-		face = faces[root];
-
-		for (key in face.edges) {
-			var edge = face.edges[key];
-			if (!edge) continue;
-
-			var direction = point(edge.to).sub(point(edge.from));
-			if (direction.length() > longest) {
-				longest = direction.length();
-				face.u = direction.normalize();
-			}
-		}
-
-		if (!face.u) face.u = new THREE.Vector3(Math.abs(face.normal.x) < 0.9 ? 1 : 0, Math.abs(face.normal.x) < 0.9 ? 0 : 1, 0).cross(face.normal).normalize();
-		face.v = new THREE.Vector3().crossVectors(face.normal, face.u);
-	}
-
-	var coord = new Float32Array(count * 2), size = new Float32Array(count * 2);
-
-	for (t = 0; t < triangles; t++) {
-		face = faces[find(t)];
-		for (k = t * 3; k < t * 3 + 3; k++) {
-			var p = point(k);
-			coord[k * 2] = p.dot(face.u);
-			coord[k * 2 + 1] = p.dot(face.v);
-			face.min[0] = Math.min(face.min[0], coord[k * 2]);
-			face.min[1] = Math.min(face.min[1], coord[k * 2 + 1]);
-			face.max[0] = Math.max(face.max[0], coord[k * 2]);
-			face.max[1] = Math.max(face.max[1], coord[k * 2 + 1]);
-		}
-	}
-
-	for (t = 0; t < triangles; t++) {
-		face = faces[find(t)];
-		for (k = t * 3; k < t * 3 + 3; k++) {
-			coord[k * 2] -= face.min[0];
-			coord[k * 2 + 1] -= face.min[1];
-			size[k * 2] = face.max[0] - face.min[0];
-			size[k * 2 + 1] = face.max[1] - face.min[1];
-		}
-	}
-
-	geometry.addAttribute('faceCoord', new THREE.BufferAttribute(coord, 2));
-	geometry.addAttribute('faceSize', new THREE.BufferAttribute(size, 2));
-}
-
-// The material of the 鋪作: the Phong shading of the other parts, plus the edge bands. Along
-// every edge of a face, a band (edgeWidth, in STL units: about 1.4 分; the 2 分 of 營造法式 would cover
-// the small faces of the 斗 almost entirely, 1 分 = 0.36 here as the 栱 are 15 分 = 5.4 high) takes the
-// edge color of its piece in 疊暈: three steps getting lighter toward the edge, with a white line
-// on it. Pieces without an edge color show their color only.
-function makeBracketMaterial()
-{
-	var phong = THREE.ShaderLib.phong;
-
-	var vertexShader = phong.vertexShader.replace('void main() {', [
-		'attribute vec2 faceCoord;',
-		'attribute vec2 faceSize;',
-		'attribute vec4 edgeColor;',
-		'varying vec2 vFaceCoord;',
-		'varying vec2 vFaceSize;',
-		'varying vec4 vEdgeColor;',
-		'void main() {',
-		'	vFaceCoord = faceCoord;',
-		'	vFaceSize = faceSize;',
-		'	vEdgeColor = edgeColor;'
-	].join('\n'));
-
-	var fragmentShader = phong.fragmentShader.replace('void main() {', [
-		'uniform float edgeWidth;',
-		'varying vec2 vFaceCoord;',
-		'varying vec2 vFaceSize;',
-		'varying vec4 vEdgeColor;',
-		'void main() {'
-	].join('\n')).replace('diffuseColor.rgb *= vColor;', [
-		'diffuseColor.rgb *= vColor;',
-		'	float edge = min( min( vFaceCoord.x, vFaceSize.x - vFaceCoord.x ), min( vFaceCoord.y, vFaceSize.y - vFaceCoord.y ) ) / edgeWidth;',
-		'	if ( vEdgeColor.a > 0.5 && edge < 1.0 ) {',
-		'		float light = edge < 0.15 ? 0.85 : edge < 0.43 ? 0.5 : edge < 0.71 ? 0.25 : 0.0;',
-		'		diffuseColor.rgb = mix( vEdgeColor.rgb, vec3( 1.0 ), light );',
-		'	}'
-	].join('\n'));
-
-	if (vertexShader === phong.vertexShader || fragmentShader.indexOf('edgeWidth;') < 0 || fragmentShader.indexOf('vEdgeColor.a') < 0) {
-		console.warn('Painting.js: the Phong shader has changed, the 鋪作 have no edge bands');
-	}
-
-	var material = new THREE.ShaderMaterial({
-		uniforms: THREE.UniformsUtils.merge([phong.uniforms, { edgeWidth: { type: 'f', value: 0.5 } }]),
-		vertexShader: vertexShader,
-		fragmentShader: fragmentShader,
-		lights: true,
-		fog: true,
-		vertexColors: THREE.VertexColors
-	});
-
-	// as partMaterial, the vertex colors give the color
-	material.uniforms.diffuse.value.set(0xffffff);
-	material.uniforms.specular.value.set(0x111111);
-	material.uniforms.shininess.value = 200;
-
-	return material;
-}
-
-partMaterials.bracket = makeBracketMaterial();
+// The 鋪作 are painted per piece (斗 and 栱昂, see roleColors): their material is white and the
+// vertex colors give the color, with the Phong shading of the other parts.
+partMaterials.bracket = partMaterial.clone();
+partMaterials.bracket.color.set(0xffffff);
+partMaterials.bracket.vertexColors = THREE.VertexColors;
 
 // the base and the stairs are stone, marble white with every painting template
 setPartColor('floor', 0xe6e2da);
