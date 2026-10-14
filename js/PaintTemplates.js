@@ -11,9 +11,12 @@
 // 青綠疊暈棱間裝 takes the lit green of the figure (the brighter quarter of its pixels) and a deep blue:
 // 斗 green and 栱昂 blue, so that neighbors alternate (相間). The 疊暈 bands along the edges of every
 // face are not drawn (they cannot be written as plain colors into the X3D export).
+// 原色 keeps the building as before the painting, all in one color: the walls, doors and windows too
+// (walls); the other templates paint them red and white. The base and stairs are marble white with
+// every template (Painting.js).
 // The buttons follow the order of this table.
 var paint_templates = {
-    original: { column: "#ff5533", dou: "#ff5533", bracket: "#ff5533", girder: "#ff5533" },   // 原色
+    original: { column: "#ff5533", dou: "#ff5533", bracket: "#ff5533", girder: "#ff5533", walls: "#ff5533" },   // 原色：建築全部同一色（台基與階梯仍是大理石）
     wucai: { column: "#c52f2e", dou: "#aa1100", bracket: "#aa1100", girder: "#aa1100", roof: "#aa1100" },   // 五彩遍裝：紅底，花紋另有青綠；屋頂同鋪作
     nianyu: { column: "#2c2346", dou: "#3d4125", bracket: "#3d4125", girder: "#3d4125", roof: "#3d4125" },   // 碾玉裝：柱 青，鋪作與樑 綠，屋頂同鋪作
     lengjian: { column: "#547136", dou: "#59723d", bracket: "#0c0599", girder: "#0c0599", roof: "#547136" },   // 青綠疊暈棱間裝：柱 綠，鋪作青綠相間（斗 綠、栱昂 青，不畫棱的疊暈），樑 青，屋頂同柱
@@ -43,8 +46,9 @@ function setPaintTemplate(_name, _button) {
         obs.setPartColorObserver(group, colors[group]);
     }
 
-    // the roof follows the girders unless given
+    // the roof follows the girders unless given; the walls are red and white unless given (原色)
     obs.setPartColorObserver("roof", colors.roof || colors.girder);
+    obs.setPartColorObserver("walls", colors.walls || null);
 
     for (var i = 0; i < pattern_groups.length; i++) {
         obs.setPartPatternObserver(pattern_groups[i], patterns[pattern_groups[i]] || null);

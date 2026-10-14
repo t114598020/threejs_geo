@@ -49,9 +49,15 @@ function preparePart(part, geometry)
 *************************************************/
 
 // Changes the color of every part of a group at once, also of the parts placed later. A role of
-// the parts painted per piece (roleColors) takes a color the same way.
+// the parts painted per piece (roleColors) takes a color the same way. "walls" paints the walls,
+// doors and windows in one plain color, or red and white with null (setWallsPlain).
 function setPartColor(group, color)
 {
+	if (group === 'walls') {
+		setWallsPlain(color);
+		return;
+	}
+
 	var role = roleColors[group];
 
 	if (role) {
@@ -389,10 +395,21 @@ function makeWallTexture()
 	return texture;
 }
 
+// The walls, doors and windows are painted red and white (the wall texture, and the colors per piece
+// of the doors and windows), or in one plain color like the other parts (原色): then their material
+// has neither the texture nor the vertex colors, and the X3D export writes it as a plain Material.
+var wallTexture = makeWallTexture();
 partMaterials.wall = partMaterial.clone();
-partMaterials.wall.color.set(0xffffff);
-partMaterials.wall.map = makeWallTexture();
-partMaterials.wall.vertexColors = THREE.VertexColors;
+
+function setWallsPlain(color)
+{
+	var material = partMaterials.wall;
+
+	material.map = color ? null : wallTexture;
+	material.vertexColors = color ? THREE.NoColors : THREE.VertexColors;
+	material.color.set(color || 0xffffff);	// white: the texture and the vertex colors give the color
+	material.needsUpdate = true;
+}
 
 /************************************************
 				鋪作
@@ -406,3 +423,8 @@ partMaterials.bracket.vertexColors = THREE.VertexColors;
 
 // the base and the stairs are stone, marble white with every painting template
 setPartColor('floor', 0xe6e2da);
+
+// At the start the parts show as 原色, the template selected first (PaintTemplates.js): the walls,
+// doors and windows in the color of the other parts, as before the painting; the other templates
+// paint them red and white.
+setWallsPlain(partMaterial.color);
