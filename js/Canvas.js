@@ -56,7 +56,7 @@ function init() {
 
 	// stats
 	stats = fac.addNewStats();
-	container.appendChild(stats.domElement);
+	// container.appendChild(stats.domElement); // FPS panel hidden
 
 	//
 	window.addEventListener('resize', onWindowResize, false);
