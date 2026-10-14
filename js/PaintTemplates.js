@@ -6,16 +6,17 @@
 // Representative main colors of the painting styles of the Yingzao Fashi, per group of parts
 // (see partGroups in Painting.js), sampled from Wu Mei's restoration (fig. 0.2): for each part the
 // median of the pixels of the hue that covers most of it. The 鋪作 have two colors, for their 斗
-// (dou, the bearing blocks) and for their 栱 and 昂 (bracket, the arms), and "<…>_edge" gives
-// them edge bands (棱間裝). The roof takes the color of the girders, unless the template gives its own.
+// (dou, the bearing blocks) and for their 栱 and 昂 (bracket, the arms). The roof takes the color of
+// the girders, unless the template gives its own.
 // 青綠疊暈棱間裝 takes the lit green of the figure (the brighter quarter of its pixels) and a deep blue:
-// 斗 green with blue edges and 栱昂 blue with green edges, so that neighbors alternate (相間).
+// 斗 green and 栱昂 blue, so that neighbors alternate (相間). The 疊暈 bands along the edges of every
+// face are not drawn (they cannot be written as plain colors into the X3D export).
 // The buttons follow the order of this table.
 var paint_templates = {
     original: { column: "#ff5533", dou: "#ff5533", bracket: "#ff5533", girder: "#ff5533" },   // 原色
     wucai: { column: "#c52f2e", dou: "#aa1100", bracket: "#aa1100", girder: "#aa1100", roof: "#aa1100" },   // 五彩遍裝：紅底，花紋另有青綠；屋頂同鋪作
     nianyu: { column: "#2c2346", dou: "#3d4125", bracket: "#3d4125", girder: "#3d4125", roof: "#3d4125" },   // 碾玉裝：柱 青，鋪作與樑 綠，屋頂同鋪作
-    lengjian: { column: "#547136", dou: "#59723d", dou_edge: "#0c0599", bracket: "#0c0599", bracket_edge: "#59723d", girder: "#0c0599", roof: "#547136" },   // 青綠疊暈棱間裝：柱 綠，鋪作青綠相間（棱疊暈），樑 青，屋頂同柱
+    lengjian: { column: "#547136", dou: "#59723d", bracket: "#0c0599", girder: "#0c0599", roof: "#547136" },   // 青綠疊暈棱間裝：柱 綠，鋪作青綠相間（斗 綠、栱昂 青，不畫棱的疊暈），樑 青，屋頂同柱
     jielu: { column: "#536436", dou: "#a01511", bracket: "#a01511", girder: "#a61a18" },   // 解綠裝：柱 綠，鋪作與樑 土朱
     danfen: { column: "#c5130f", dou: "#ab1c12", bracket: "#ab1c12", girder: "#bc1913" },   // 丹粉刷飾：全部 紅
     tuhuang: { column: "#ffd240", dou: "#fdbb3c", bracket: "#fdbb3c", girder: "#ffc73d" }   // 土黃刷飾：全部 黃
@@ -42,9 +43,7 @@ function setPaintTemplate(_name, _button) {
         obs.setPartColorObserver(group, colors[group]);
     }
 
-    // edge bands only where the template has them; the roof follows the girders unless given
-    obs.setPartColorObserver("dou_edge", colors.dou_edge || null);
-    obs.setPartColorObserver("bracket_edge", colors.bracket_edge || null);
+    // the roof follows the girders unless given
     obs.setPartColorObserver("roof", colors.roof || colors.girder);
 
     for (var i = 0; i < pattern_groups.length; i++) {
@@ -64,9 +63,7 @@ function makePaintTemplateButtons() {
         var patterns = paint_patterns[name] || {};
         var puzuo = colors.dou === colors.bracket ? colors.bracket : "linear-gradient(" + colors.dou + " 50%, " + colors.bracket + " 50%)";
         var title = "柱 " + colors.column + "／鋪作 " +
-            (colors.dou === colors.bracket && !colors.dou_edge ? colors.bracket :
-                "斗 " + colors.dou + (colors.dou_edge ? "（棱 " + colors.dou_edge + "）" : "") +
-                "、栱昂 " + colors.bracket + (colors.bracket_edge ? "（棱 " + colors.bracket_edge + "）" : "")) +
+            (colors.dou === colors.bracket ? colors.bracket : "斗 " + colors.dou + "、栱昂 " + colors.bracket) +
             "／樑 " + colors.girder + (colors.roof ? "／屋頂 " + colors.roof : "") +
             (patterns.column || patterns.girder ? "（柱、樑貼彩畫圖）" : "");
 
