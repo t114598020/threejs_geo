@@ -36,7 +36,7 @@ function init() {
 	var fac = new Factory();
 
 	// Ground0x999999
-	var ground = fac.addGround(40, 40, 0x999999, 0x101010);
+	ground = fac.addGround(40, 40, 0x999999, 0x101010);
 	scene.add(ground);
 
 	// Lights443333
@@ -53,6 +53,8 @@ function init() {
 
 	//CONTROL				
 	orbitControl = new THREE.OrbitControls(camera);
+	// dragging the view stops a turn of the View menu
+	orbitControl.addEventListener('start', function () { viewTurn = null; });
 
 	// stats
 	stats = fac.addNewStats();
@@ -151,6 +153,48 @@ function makeSky() {
 	return new THREE.Mesh(new THREE.SphereGeometry(10, 32, 16), material);
 }
 
+// View menu of the layout pages (ViewMenu.js, through Observer.js).
+// The camera turns around the orbit target to the front (+z, where it starts), the back, or the
+// left (-x) or right (+x) side, keeping its distance and height; the turn takes half a second and
+// goes the short way around.
+var view_azimuths = { front: 0, right: Math.PI / 2, back: Math.PI, left: -Math.PI / 2 };
+var viewTurn = null;
+
+function actSetView(_direction) {
+	var offset = camera.position.clone().sub(orbitControl.target);
+	var from = Math.atan2(offset.x, offset.z);
+	var turn = view_azimuths[_direction] - from;
+
+	viewTurn = { from: from, turn: Math.atan2(Math.sin(turn), Math.cos(turn)), start: Date.now() };
+}
+
+function turnView() {
+	if (!viewTurn) return;
+
+	var t = Math.min((Date.now() - viewTurn.start) / 500, 1);
+	var theta = viewTurn.from + viewTurn.turn * t * t * (3 - 2 * t);
+	var target = orbitControl.target;
+	var radius = Math.sqrt(Math.pow(camera.position.x - target.x, 2) + Math.pow(camera.position.z - target.z, 2));
+
+	camera.position.x = target.x + radius * Math.sin(theta);
+	camera.position.z = target.z + radius * Math.cos(theta);
+	camera.lookAt(target);
+
+	if (t == 1) viewTurn = null;
+}
+
+// The background (sky, ground and fog) can be hidden, leaving the model on white (the clear color
+// of the renderer). The fog is moved beyond the far plane rather than removed, so the materials do
+// not need to be compiled again.
+var ground, showBackground = true;
+
+function actShowBackground(_show) {
+	showBackground = _show;
+	ground.visible = _show;
+	scene.fog.near = _show ? 2 : 100;
+	scene.fog.far = _show ? 15 : 101;
+}
+
 function onWindowResize() {
 
 	camera.aspect = window.innerWidth / window.innerHeight;
@@ -171,6 +215,13 @@ function animate() {
 }
 
 function render() {
+
+	turnView();
+
+	if (!showBackground) {
+		renderer.render(scene, camera);
+		return;
+	}
 
 	// the sky first (it clears the frame), then the scene over it
 	sky.position.copy(camera.position);

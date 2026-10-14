@@ -59,4 +59,12 @@ function Observer()
 	this.setPartPatternObserver = function (_group, _url) {
 	    document.getElementById('viewer').contentWindow.actSetPartPattern(_group, _url);
 	}
+
+	this.setViewObserver = function (_direction) {
+	    document.getElementById('viewer').contentWindow.actSetView(_direction);
+	}
+
+	this.showBackgroundObserver = function (_show) {
+	    document.getElementById('viewer').contentWindow.actShowBackground(_show);
+	}
 }
