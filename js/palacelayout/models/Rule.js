@@ -694,7 +694,7 @@ Rule17.prototype.match = function (_map) {
                     if (_map[j][i].getWidth() == _map[j][i].getHeight()) {
                         if (i < Math.round(_map[0].length / 2)) {
                             if (_map[j][i].haveTopEdge()) {
-                                result.x = tmp_x + _map[i][j].getWidth() / 2;
+                                result.x = tmp_x + _map[j][i].getWidth() / 2;
                                 result.y = tmp_y;
                                 results.push(result);
                                 result = {};
