@@ -46,6 +46,16 @@ function init() {
 	var shadow_light = fac.addShadowedLight(0, 2.5, 1.5, 0xffff99, 1);
 	scene.add(shadow_light);
 
+	// the shadowed light comes from the front: weaker lights from the left and the right, without
+	// shadows, so that the sides of the building are not left in the dark
+	var left_light = new THREE.DirectionalLight(0xffffff, 0.45);
+	left_light.position.set(-1, 0.4, 0);
+	scene.add(left_light);
+
+	var right_light = new THREE.DirectionalLight(0xffffff, 0.45);
+	right_light.position.set(1, 0.4, 0);
+	scene.add(right_light);
+
 
 	// renderer
 	renderer = fac.addNewRenderer(scene.fog.color, window.devicePixelRatio, window.innerWidth, window.innerHeight);
@@ -183,6 +193,33 @@ function turnView() {
 	if (t == 1) viewTurn = null;
 }
 
+// Parallel projection (View menu): an orthographic camera follows the perspective camera, which the
+// orbit control keeps moving, and shows at the orbit target as much as the perspective camera shows
+// there, so the view keeps its size when switching and zooming still works by moving closer.
+var orthoCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.01, 15), parallelProjection = false;
+
+function actSetParallelProjection(_parallel) {
+	parallelProjection = _parallel;
+}
+
+// the camera the scene is drawn with
+function viewCamera() {
+	if (!parallelProjection) return camera;
+
+	var half = camera.position.distanceTo(orbitControl.target) * Math.tan(THREE.Math.degToRad(camera.fov / 2));
+
+	orthoCamera.left = -half * camera.aspect;
+	orthoCamera.right = half * camera.aspect;
+	orthoCamera.top = half;
+	orthoCamera.bottom = -half;
+	orthoCamera.updateProjectionMatrix();
+
+	orthoCamera.position.copy(camera.position);
+	orthoCamera.quaternion.copy(camera.quaternion);
+
+	return orthoCamera;
+}
+
 // The background (sky, ground and fog) can be hidden, leaving the model on white (the clear color
 // of the renderer). The fog is moved beyond the far plane rather than removed, so the materials do
 // not need to be compiled again.
@@ -217,17 +254,19 @@ function animate() {
 function render() {
 
 	turnView();
+	var view = viewCamera();
 
 	if (!showBackground) {
-		renderer.render(scene, camera);
+		renderer.render(scene, view);
 		return;
 	}
 
-	// the sky first (it clears the frame), then the scene over it
+	// the sky first (it clears the frame), then the scene over it; the sky is always seen in
+	// perspective, as it lies far away
 	sky.position.copy(camera.position);
 	renderer.render(skyScene, camera);
 	renderer.autoClear = false;
-	renderer.render(scene, camera);
+	renderer.render(scene, view);
 	renderer.autoClear = true;
 
 }

@@ -67,4 +67,8 @@ function Observer()
 	this.showBackgroundObserver = function (_show) {
 	    document.getElementById('viewer').contentWindow.actShowBackground(_show);
 	}
+
+	this.setParallelProjectionObserver = function (_parallel) {
+	    document.getElementById('viewer').contentWindow.actSetParallelProjection(_parallel);
+	}
 }
