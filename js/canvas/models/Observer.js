@@ -71,4 +71,12 @@ function Observer()
 	this.setParallelProjectionObserver = function (_parallel) {
 	    document.getElementById('viewer').contentWindow.actSetParallelProjection(_parallel);
 	}
+
+	this.setStraightObserver = function () {
+	    document.getElementById('viewer').contentWindow.actSetStraight();
+	}
+
+	this.setLightObserver = function (_direction) {
+	    document.getElementById('viewer').contentWindow.actSetLight(_direction);
+	}
 }

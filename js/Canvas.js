@@ -43,18 +43,8 @@ function init() {
 	scene.add(new THREE.HemisphereLight(0x443333, 0x111122));
 
 	//0xffff99
-	var shadow_light = fac.addShadowedLight(0, 2.5, 1.5, 0xffff99, 1);
-	scene.add(shadow_light);
-
-	// the shadowed light comes from the front: weaker lights from the left and the right, without
-	// shadows, so that the sides of the building are not left in the dark
-	var left_light = new THREE.DirectionalLight(0xffffff, 0.45);
-	left_light.position.set(-1, 0.4, 0);
-	scene.add(left_light);
-
-	var right_light = new THREE.DirectionalLight(0xffffff, 0.45);
-	right_light.position.set(1, 0.4, 0);
-	scene.add(right_light);
+	sunLight = fac.addShadowedLight(0, 2.5, 1.5, 0xffff99, 1);
+	scene.add(sunLight);
 
 
 	// renderer
@@ -191,6 +181,44 @@ function turnView() {
 	camera.lookAt(target);
 
 	if (t == 1) viewTurn = null;
+}
+
+// The shadowed light shines from the front, the left or the right (View menu), always as strong.
+// It is the same light moved, so the shaders keep their number of lights and shadows.
+var sunLight;
+var light_positions = { front: [0, 2.5, 1.5], left: [-1.5, 2.5, 0], right: [1.5, 2.5, 0] };
+
+function actSetLight(_direction) {
+	var p = light_positions[_direction];
+	sunLight.position.set(p[0], p[1], p[2]);
+}
+
+// Straight (View menu): the camera looks level at the middle height of the building, from where it
+// is turned now and at the same distance, e.g. for elevations with parallel projection.
+function actSetStraight() {
+	var box = new THREE.Box3(), target = orbitControl.target;
+
+	for (var i = 0; i < scene.children.length; i++) {
+		var mesh = scene.children[i];
+		if (!(mesh instanceof THREE.Mesh) || !mesh.userData.part) continue;
+
+		if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox();
+		mesh.updateMatrixWorld();
+		box.union(mesh.geometry.boundingBox.clone().applyMatrix4(mesh.matrixWorld));
+	}
+
+	var distance = camera.position.distanceTo(target);
+	var offset = camera.position.clone().sub(target);
+
+	if (box.max.y >= box.min.y) target.y = (box.min.y + box.max.y) / 2;
+
+	offset.y = 0;
+	if (offset.lengthSq() < 1e-12) offset.set(0, 0, 1);	// looking straight down: face the front
+	offset.setLength(distance);
+
+	viewTurn = null;
+	camera.position.copy(target).add(offset);
+	camera.lookAt(target);
 }
 
 // Parallel projection (View menu): an orthographic camera follows the perspective camera, which the
