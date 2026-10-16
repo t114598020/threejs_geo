@@ -56,6 +56,10 @@ function Observer()
 	    document.getElementById('viewer').contentWindow.actSetPartColor(_group, _color);
 	}
 
+	this.showLayoutExampleObserver = function (_name) {
+	    document.getElementById('viewer').contentWindow.actShowLayoutExample(_name);
+	}
+
 	this.setPartPatternObserver = function (_group, _url) {
 	    document.getElementById('viewer').contentWindow.actSetPartPattern(_group, _url);
 	}

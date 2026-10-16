@@ -1,0 +1,142 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+
+<head>
+    <title>Four layout examples</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="css/style.css">
+    <style>
+        /* the choice of layout and the painting templates at the left, the preview beside them */
+        .space.layout-panel { width: 360px; padding: 16px 18px; border-right: 1px solid #ddd; }
+        .canvas_container.layout-viewer { left: 360px; width: auto; }
+        .layout-panel h4 { margin: 0 0 12px; }
+        .layout-panel .list-group-item { cursor: pointer; }
+        .layout-panel .list-group-item small { display: block; color: #777; line-height: 1.4; }
+        .layout-panel .list-group-item.active small { color: #e6f0ff; }
+        .layout-panel .part-colors { position: static; display: block; margin-top: 14px; line-height: 30px; }
+        .layout-panel .note { margin-top: 14px; font-size: 12px; color: #888; line-height: 1.5; }
+    </style>
+
+    <script src="lib/jquery-2.1.3.min.js"></script>
+    <script src="lib/bootstrap.min.js"></script>
+
+    <!--JavaScript-->
+    <script src="js/canvas/models/Observer.js"></script>
+    <script src="js/PaintTemplates.js"></script>
+    <script src="js/ViewMenu.js"></script>
+    <script>
+        // The floor of one of the four layouts and the section of its timber frame
+        // (js/canvas/models/LayoutExamples.js in the preview), painted with the templates of the other pages.
+        var obs = new Observer();      // setPaintTemplate in PaintTemplates.js
+        var layout_shown = 'single';
+
+        function showLayout(_name) {
+            layout_shown = _name;
+            obs.showLayoutExampleObserver(_name);
+            $('#Layouts .list-group-item').removeClass('active');
+            $('#Layout_' + _name).addClass('active');
+        }
+
+        // the preview is ready once its page has loaded
+        function viewerLoaded() {
+            showLayout(layout_shown);
+        }
+
+        $(document).ready(function () {
+            $('#PartColors').appendTo('#Templates').show();
+        });
+    </script>
+</head>
+
+<body>
+    <div id="header" class="header">
+        <ul class="nav nav-pills">
+            <li><a href="index.html">
+                    <font style="color: DodgerBlue;" size="3">Home</font>
+                </a></li>
+            <li class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                    <font style="color: DodgerBlue;" size="3">View</font><span class="caret"></span>
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a href="#" onclick="setView('front')">
+                            <font size="3">Front</font>
+                        </a></li>
+                    <li><a href="#" onclick="setView('back')">
+                            <font size="3">Back</font>
+                        </a></li>
+                    <li><a href="#" onclick="setView('left')">
+                            <font size="3">Left</font>
+                        </a></li>
+                    <li><a href="#" onclick="setView('right')">
+                            <font size="3">Right</font>
+                        </a></li>
+                    <li><a href="#" onclick="setStraight()">
+                            <font size="3">Straight</font>
+                        </a></li>
+                    <li><a href="#" onclick="setTop()">
+                            <font size="3">Top</font>
+                        </a></li>
+                    <li role="separator" class="divider"></li>
+                    <li><a href="#" onclick="toggleBackground()">
+                            <font size="3"><span id="BackgroundCheck">&#10003;</span> Background</font>
+                        </a></li>
+                    <li><a href="#" onclick="toggleParallelProjection()">
+                            <font size="3"><span id="ParallelCheck" style="visibility: hidden;">&#10003;</span> Parallel Projection</font>
+                        </a></li>
+                    <li role="separator" class="divider"></li>
+                    <li><a href="#" onclick="setLight('front')">
+                            <font size="3"><span id="LightCheck_front" class="light-check">&#10003;</span> Light Front</font>
+                        </a></li>
+                    <li><a href="#" onclick="setLight('left')">
+                            <font size="3"><span id="LightCheck_left" class="light-check" style="visibility: hidden;">&#10003;</span> Light Left</font>
+                        </a></li>
+                    <li><a href="#" onclick="setLight('right')">
+                            <font size="3"><span id="LightCheck_right" class="light-check" style="visibility: hidden;">&#10003;</span> Light Right</font>
+                        </a></li>
+                    <li><a href="#" onclick="toggleShadow()">
+                            <font size="3"><span id="ShadowCheck">&#10003;</span> Shadow</font>
+                        </a></li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+
+    <div id="space" class="space layout-panel">
+        <h4>Four layout examples</h4>
+
+        <div id="Layouts" class="list-group">
+            <a id="Layout_single" class="list-group-item active" onclick="showLayout('single')">
+                <b>(a) Single-trough</b> 單槽
+                <small>殿閣地盤殿身七間副階周帀身內單槽<br>草架側樣：殿堂等五鋪作副階四鋪作單槽</small>
+            </a>
+            <a id="Layout_double" class="list-group-item" onclick="showLayout('double')">
+                <b>(b) Double-trough</b> 雙槽
+                <small>殿閣地盤殿身七間副階周帀身內雙槽<br>草架側樣：殿堂等八鋪作副階六鋪作雙槽</small>
+            </a>
+            <a id="Layout_split" class="list-group-item" onclick="showLayout('split')">
+                <b>(c) Split-center trough</b> 分心斗底槽
+                <small>殿閣地盤殿身九間身內分心斗底槽（無副階）<br>草架側樣：殿堂等六鋪作分心槽</small>
+            </a>
+            <a id="Layout_concentric" class="list-group-item" onclick="showLayout('concentric')">
+                <b>(d) Concentric-trough</b> 金箱斗底槽
+                <small>殿閣地盤殿身七間副階周帀身內金箱斗底槽<br>草架側樣：殿堂等七鋪作副階五鋪作雙槽（斗底槽準此）</small>
+            </a>
+        </div>
+
+        <div id="Templates"></div>
+
+        <div class="note">
+            The floor shows the columns of the plan (殿閣分槽圖) as dots; the frame is the cross-section
+            (草架側樣) of the Yingzao Fashi drawings, standing on the last row of columns.
+        </div>
+    </div>
+
+    <div id="canvas_container" class="canvas_container layout-viewer">
+        <iframe id="viewer" allowfullscreen onmousewheel src="Canvas.html" onload="viewerLoaded()"></iframe>
+    </div>
+
+</body>
+
+</html>

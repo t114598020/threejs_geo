@@ -107,6 +107,11 @@ function actAddRoof(_data) {
 
 function actSetPartColor(_group, _color) {
 	setPartColor(_group, _color);
+	paintLayoutExample();	// the section of FourLayouts.html (LayoutExamples.js)
+}
+
+function actShowLayoutExample(_name) {
+	showLayoutExample(_name);
 }
 
 function actSetPartPattern(_group, _url) {
