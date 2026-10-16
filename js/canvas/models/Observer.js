@@ -91,4 +91,8 @@ function Observer()
 	this.showShadowObserver = function (_show) {
 	    document.getElementById('viewer').contentWindow.actShowShadow(_show);
 	}
+
+	this.screenshotObserver = function (_scale) {
+	    document.getElementById('viewer').contentWindow.actScreenshot(_scale);
+	}
 }

@@ -2,9 +2,15 @@
 // of the building, levels it (Straight) or looks down from above (Top), shows or hides the background (sky, ground and fog),
 // switches between perspective and parallel projection, and lets the light shine from the front,
 // the left or the right with or without shadows, through Observer.js and Canvas.js. The checks show what is on.
+// Screenshot saves the view as a PNG with screenshot_scale times the pixels of the screen.
 var background_shown = true;
 var parallel_projection = false;
 var shadow_shown = true;
+var screenshot_scale = 3;
+
+function takeScreenshot() {
+    new Observer().screenshotObserver(screenshot_scale);
+}
 
 function setView(_direction) {
     new Observer().setViewObserver(_direction);

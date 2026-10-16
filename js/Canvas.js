@@ -209,6 +209,36 @@ function actShowShadow(_show) {
 	sunLight.shadow.darkness = _show ? shadowDarkness : 0;
 }
 
+// Screenshot (View menu): the view is drawn once more with _scale times the pixels of the screen and
+// saved as a PNG (e.g. DoubleGroove_20261016-153012.png); the canvas then goes back to its size. The
+// picture is read right after it is drawn, before the frame is cleared.
+function actScreenshot(_scale) {
+	var ratio = renderer.getPixelRatio();
+
+	renderer.setPixelRatio(_scale);
+	renderer.setSize(window.innerWidth, window.innerHeight);
+	render();
+	var url = renderer.domElement.toDataURL('image/png');
+
+	renderer.setPixelRatio(ratio);
+	renderer.setSize(window.innerWidth, window.innerHeight);
+	render();
+
+	var bytes = atob(url.split(',')[1]), data = new Uint8Array(bytes.length);
+	for (var i = 0; i < bytes.length; i++) data[i] = bytes.charCodeAt(i);
+	saveAs(new Blob([data], { type: 'image/png' }), screenshotName() + '.png');
+}
+
+// the page (and the layout shown on FourLayouts.html) and the time
+function screenshotName() {
+	var page = window.parent.location.pathname.split('/').pop().replace(/\.html$/, '') || 'preview';
+	var d = new Date();
+	function two(n) { return (n < 10 ? '0' : '') + n; }
+
+	return page + (layoutExampleShown ? '_' + layoutExampleShown : '') + '_' +
+		d.getFullYear() + two(d.getMonth() + 1) + two(d.getDate()) + '-' + two(d.getHours()) + two(d.getMinutes()) + two(d.getSeconds());
+}
+
 // Straight (View menu): the camera looks level at the middle height of the building, from where it
 // is turned now and at the same distance, e.g. for elevations with parallel projection.
 function actSetStraight() {
