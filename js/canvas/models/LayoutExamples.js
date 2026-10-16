@@ -12,12 +12,14 @@
 // section is read from models/layouts/<section>.stl. Its columns stand on the plan's rows of columns:
 // plan y = section x + offset (found by matching the columns of the two models, within 1.5 inches),
 // plan z = section z + zShift, and its plane is the last row of columns along the building (endRow),
-// the frame reaching into the building.
+// the frame reaching into the building. The frame of section 35 reaches the other way in its model,
+// so it is turned half round (turned) about the middle of the row of columns it stands on.
 //
-// The parts of the section are painted with the template of the page (paintLayoutExample): columns,
-// beams and purlins (girder), rafters and roof boards (roof), and the 斗 and 栱 of the brackets, told
-// apart by the size and shape of every piece (triangles joined at their corners). The base of the
-// section is left out, as the floor is drawn instead.
+// The parts of the section are told apart by the size and shape of every piece (triangles joined at
+// their corners): columns, beams and purlins (girder), rafters and roof boards (roof), and the 斗 and
+// 栱 of the brackets. The round columns have the material of the columns of the other pages, so that
+// the patterns of the templates are painted on them; the rest shows the colors of the template
+// (makeLayoutSection). The base of the section is left out, as the floor is drawn instead.
 
 var LAYOUT_EXAMPLES = {
 	single: {
@@ -36,7 +38,7 @@ var LAYOUT_EXAMPLES = {
 		columns: [-781.8,-297.1,-781.8,-179,-781.8,-60.9,-781.8,57.2,-781.8,175.3,-663.7,-297.1,-663.7,-60.9,-663.7,175.3,-545.5,-297.1,-545.5,-60.9,-545.5,175.3,-427.4,-297.1,-427.4,-60.9,-427.4,175.3,-309.3,-297.1,-309.3,-60.9,-309.3,175.3,-191.2,-297.1,-191.2,-60.9,-191.2,175.3,-73.1,-297.1,-73.1,-60.9,-73.1,175.3,45,-297.1,45,-60.9,45,175.3,163.1,-297.1,163.1,-60.9,163.1,175.3,281.2,-297.1,281.2,-179,281.2,-60.9,281.2,57.2,281.2,175.3]
 	},
 	concentric: {
-		plan: 33, section: 35, offset: 625.4, zShift: 157.1, endRow: 1147.7,
+		plan: 33, section: 35, offset: 625.4, zShift: 157.1, endRow: 1147.7, turned: true,
 		platform: [12.4, 210.1, 112.5, 1209.3, 1020.8, 153.8],
 		columns: [74,271.2,74,357.5,74,486.4,74,615.2,74,744,74,872.9,74,958.8,159.9,271.6,159.9,357.5,159.9,486.4,159.9,615.2,159.9,744,159.9,872.9,159.9,958.8,288.7,271.6,288.7,357.5,288.7,486.4,288.7,615.2,288.7,744,288.7,872.9,288.7,958.8,417.6,271.6,417.6,357.5,417.6,486.4,417.6,744,417.6,872.9,417.6,958.8,546.4,271.6,546.4,357.5,546.4,486.4,546.4,744,546.4,872.9,546.4,958.8,675.3,271.6,675.3,357.5,675.3,486.4,675.3,744,675.3,872.9,675.3,958.8,804.1,271.6,804.1,357.5,804.1,486.4,804.1,744,804.1,872.9,804.1,958.8,932.9,271.6,932.9,357.5,932.9,486.4,932.9,744,932.9,872.9,932.9,958.8,933,615.2,1061.8,271.6,1061.8,357.5,1061.8,486.4,1061.8,615.2,1061.8,744,1061.8,872.9,1061.8,958.8,1147.7,271.6,1147.7,357.5,1147.7,486.4,1147.7,615.2,1147.7,744,1147.7,872.9,1147.7,959.3]
 	}
@@ -45,7 +47,7 @@ var LAYOUT_EXAMPLES = {
 var LAYOUT_SCALE = 0.0011;		// scene units per inch: the plans are 1100 to 1250 inches long
 
 var layoutExampleShown = null;	// name of the layout shown
-var layoutExamples = {};		// name -> { meshes: floor meshes and lines, section: mesh once loaded }
+var layoutExamples = {};		// name -> { meshes: floor meshes and lines, section: its meshes once loaded }
 
 function showLayoutExample(name)
 {
@@ -54,8 +56,7 @@ function showLayoutExample(name)
 
 	if (layoutExampleShown) {
 		var shown = layoutExamples[layoutExampleShown];
-		shown.meshes.forEach(function (mesh) { scene.remove(mesh); });
-		if (shown.section) scene.remove(shown.section);
+		shown.meshes.concat(shown.section || []).forEach(function (mesh) { scene.remove(mesh); });
 	}
 
 	layoutExampleShown = name;
@@ -66,8 +67,7 @@ function showLayoutExample(name)
 		loadLayoutSection(name, example);
 	}
 
-	built.meshes.forEach(function (mesh) { scene.add(mesh); });
-	if (built.section) scene.add(built.section);
+	built.meshes.concat(built.section || []).forEach(function (mesh) { scene.add(mesh); });
 
 	frameLayoutExample(example);
 }
@@ -87,14 +87,28 @@ function planToScene(example)
 }
 
 // section coordinates -> plan: section x along the plan's y (the depth of the building), section y
-// into the building from the last row of columns, z up
+// into the building from the last row of columns, z up. A turned section is then turned half round
+// about the middle of its row of columns, which keeps its columns on the columns of the plan (the
+// rows are the same from the front and from the back).
 function sectionToPlan(example)
 {
-	return new THREE.Matrix4().set(
+	var matrix = new THREE.Matrix4().set(
 		0, -1, 0, example.endRow,
 		1, 0, 0, example.offset,
 		0, 0, 1, example.zShift,
 		0, 0, 0, 1);
+
+	if (example.turned) {
+		var ys = layoutRows(example.columns, 1), middle = (ys[0] + ys[ys.length - 1]) / 2;
+		var turn = new THREE.Matrix4().set(
+			-1, 0, 0, 2 * example.endRow,
+			0, -1, 0, 2 * middle,
+			0, 0, 1, 0,
+			0, 0, 0, 1);
+		matrix = new THREE.Matrix4().multiplyMatrices(turn, matrix);
+	}
+
+	return matrix;
 }
 
 /************************************************
@@ -117,21 +131,23 @@ function makeLayoutFloor(example)
 	var xs = layoutRows(c, 0), ys = layoutRows(c, 1);
 	var x0 = xs[0], x1 = xs[xs.length - 1], y0 = ys[0], y1 = ys[ys.length - 1];
 
-	// white lines along the rows, just above the platform
+	// black lines along the rows, just above the platform, as the layout grid of the other pages
 	var lines = new THREE.Geometry(), z = top + 0.4;
 	xs.forEach(function (x) { lines.vertices.push(new THREE.Vector3(x, y0, z), new THREE.Vector3(x, y1, z)); });
 	ys.forEach(function (y) { lines.vertices.push(new THREE.Vector3(x0, y, z), new THREE.Vector3(x1, y, z)); });
 	lines.applyMatrix(toScene);
-	meshes.push(new THREE.LineSegments(lines, new THREE.LineBasicMaterial({ color: 0xffffff })));
+	meshes.push(new THREE.LineSegments(lines, new THREE.LineBasicMaterial({ color: 0x000000 })));
 
-	// a dark dot where every column stands
-	var dots = new THREE.Geometry(), dot = new THREE.CircleGeometry(13, 20);
+	// a dark dot where every column stands, over the lines: drawn after them and pulled toward the
+	// camera, so that a line never shows across a dot
+	var dots = new THREE.Geometry(), dot = new THREE.CircleGeometry(9, 20);
 	for (var i = 0; i < c.length; i += 2) {
-		dots.merge(dot, new THREE.Matrix4().makeTranslation(c[i], c[i + 1], top + 0.8));
+		dots.merge(dot, new THREE.Matrix4().makeTranslation(c[i], c[i + 1], top + 1.2));
 	}
 	dots.applyMatrix(toScene);
-	var marks = layoutMesh(dots, new THREE.MeshBasicMaterial({ color: 0x111111 }), 'LayoutColumns');
+	var marks = layoutMesh(dots, new THREE.MeshBasicMaterial({ color: 0x111111, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }), 'LayoutColumns');
 	marks.castShadow = false;
+	marks.renderOrder = 1;
 	meshes.push(marks);
 
 	return meshes;
@@ -170,49 +186,93 @@ function loadLayoutSection(name, example)
 
 		layoutExamples[name].section = section;
 		paintLayoutExample();
-		if (layoutExampleShown === name) scene.add(section);
+		if (layoutExampleShown === name) section.forEach(function (mesh) { scene.add(mesh); });
 	});
 }
 
-// the section without its base, with the role of every vertex and colors painted from them
+// The section is drawn as two meshes. The columns have the material of the columns of the other pages
+// (Painting.js) and texture coordinates column by column, so that the patterns of the templates
+// (五彩遍裝, 碾玉裝) are painted on them as on the columns there. The rest of the frame shows only the
+// colors of the template, per vertex (paintLayoutExample): beams and purlins as the girders, rafters
+// and roof boards as the roof, and the 斗 and 栱 of the brackets as those of the 鋪作.
+var SECTION_GROUPS = [
+	{ name: 'column', roles: ['column'], uvs: sectionColumnUVs },
+	{ name: 'frame', roles: ['girder', 'roof', 'dou', 'bracket'] }
+];
+
+var layoutFrameMaterial = null;	// white, the vertex colors give the color
+
+// the meshes of the section, without its base
 function makeLayoutSection(geometry, example)
 {
 	var pos = geometry.attributes.position.array, nrm = geometry.attributes.normal.array;
-	var roles = sectionRoles(pos);
-	var kept = [];
+	var found = sectionRoles(pos);
+	var toScene = new THREE.Matrix4().multiplyMatrices(planToScene(example), sectionToPlan(example));
 
-	for (var t = 0; t < roles.length; t++) {
-		if (roles[t]) kept.push(t);
+	if (!layoutFrameMaterial) {
+		layoutFrameMaterial = partMaterial.clone();
+		layoutFrameMaterial.color.set(0xffffff);
+		layoutFrameMaterial.vertexColors = THREE.VertexColors;
 	}
 
-	var positions = new Float32Array(kept.length * 9), normals = new Float32Array(kept.length * 9);
-	var vertexRoles = [];
-
-	kept.forEach(function (t, i) {
-		for (var k = 0; k < 9; k++) {
-			positions[i * 9 + k] = pos[t * 9 + k];
-			normals[i * 9 + k] = nrm[t * 9 + k];
+	return SECTION_GROUPS.map(function (g) {
+		// the triangles of the group, piece by piece
+		var pieces = {}, t, k;
+		for (t = 0; t < found.roles.length; t++) {
+			if (g.roles.indexOf(found.roles[t]) >= 0) (pieces[found.pieces[t]] = pieces[found.pieces[t]] || []).push(t);
 		}
-		vertexRoles.push(roles[t], roles[t], roles[t]);
-	});
+		var keys = Object.keys(pieces);
+		if (!keys.length) return null;
 
-	var section = new THREE.BufferGeometry();
-	section.addAttribute('position', new THREE.BufferAttribute(positions, 3));
-	section.addAttribute('normal', new THREE.BufferAttribute(normals, 3));
-	section.addAttribute('color', new THREE.BufferAttribute(new Float32Array(positions.length), 3));
-	section.applyMatrix(new THREE.Matrix4().multiplyMatrices(planToScene(example), sectionToPlan(example)));
+		var triangles = [];
+		keys.forEach(function (key) { triangles = triangles.concat(pieces[key]); });
 
-	var material = partMaterial.clone();
-	material.color.set(0xffffff);	// the vertex colors give the color
-	material.vertexColors = THREE.VertexColors;
+		var positions = new Float32Array(triangles.length * 9), normals = new Float32Array(triangles.length * 9);
+		var roles = [];
+		triangles.forEach(function (t, i) {
+			for (k = 0; k < 9; k++) {
+				positions[i * 9 + k] = pos[t * 9 + k];
+				normals[i * 9 + k] = nrm[t * 9 + k];
+			}
+			roles.push(found.roles[t], found.roles[t], found.roles[t]);
+		});
 
-	var mesh = layoutMesh(section, material, 'LayoutSection');
-	mesh.userData.roles = vertexRoles;
-	return mesh;
+		var part = new THREE.BufferGeometry();
+		part.addAttribute('position', new THREE.BufferAttribute(positions, 3));
+		part.addAttribute('normal', new THREE.BufferAttribute(normals, 3));
+
+		// texture coordinates of every piece, from the section as it is (inches, z up)
+		if (g.uvs) {
+			var uv = new Float32Array(triangles.length * 6), start = 0;
+			keys.forEach(function (key) {
+				var n = pieces[key].length * 9;
+				uv.set(g.uvs(positions.subarray(start, start + n), normals.subarray(start, start + n)), start / 3 * 2);
+				start += n;
+			});
+			part.addAttribute('uv', new THREE.BufferAttribute(uv, 2));
+		}
+
+		if (g.name === 'frame') part.addAttribute('color', new THREE.BufferAttribute(new Float32Array(positions.length), 3));
+		part.applyMatrix(toScene);
+
+		var mesh = layoutMesh(part, g.name === 'column' ? getGroupMaterial('column') : layoutFrameMaterial, 'LayoutSection_' + g.name);
+		if (g.name === 'frame') mesh.userData.roles = roles;
+		return mesh;
+	}).filter(function (mesh) { return mesh; });
 }
 
-// Role of every triangle: the piece it belongs to (triangles sharing a corner) by the size and the
-// shape of its bounding box, in inches; null for the base of the section.
+// Columns: the pattern stands upright on the shaft as on the columns of the other pages
+// (makeColumnUVs in Painting.js, which also takes a column upright along z).
+function sectionColumnUVs(positions)
+{
+	var column = new THREE.BufferGeometry();
+	column.addAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));
+	makeColumnUVs(column);
+	return column.attributes.uv.array;
+}
+
+// Role of every triangle and the piece it belongs to (triangles sharing a corner): the role by the
+// size and the shape of the bounding box of the piece, in inches; null for the base of the section.
 function sectionRoles(pos)
 {
 	var triangles = pos.length / 9;
@@ -246,6 +306,22 @@ function sectionRoles(pos)
 		}
 	}
 
+	// round: the pieces shaped as a column whose corners lie in at least 12 directions round its axis
+	// (SketchUp draws circles with 24 sides; a square post has 4, an octagonal one 8). The radius
+	// changes with the height (base, shaft and the 卷殺 of the top), so it is not compared.
+	var directions = {};
+	for (t = 0; t < triangles; t++) {
+		root = find(t);
+		var c = boxes[root];
+		if (!isSectionColumn(c)) continue;
+		var cx = (c[0] + c[3]) / 2, cy = (c[1] + c[4]) / 2, seen = directions[root] || (directions[root] = {});
+		for (k = t * 9; k < t * 9 + 9; k += 3) {
+			if (Math.abs(pos[k] - cx) + Math.abs(pos[k + 1] - cy) < 0.5) continue;	// on the axis
+			seen[Math.round(Math.atan2(pos[k + 1] - cy, pos[k] - cx) * 90 / Math.PI)] = true;	// in steps of 2°
+		}
+	}
+	for (root in directions) boxes[root].round = Object.keys(directions[root]).length >= 12;
+
 	// the columns first: their base tells the base of the section apart
 	var columnBase = Infinity;
 	for (root in boxes) {
@@ -253,9 +329,12 @@ function sectionRoles(pos)
 	}
 	for (root in boxes) boxes[root].role = sectionPieceRole(boxes[root], columnBase);
 
-	var roles = [];
-	for (t = 0; t < triangles; t++) roles.push(boxes[find(t)].role);
-	return roles;
+	var roles = [], pieces = [];
+	for (t = 0; t < triangles; t++) {
+		pieces.push(find(t));
+		roles.push(boxes[pieces[t]].role);
+	}
+	return { roles: roles, pieces: pieces };
 }
 
 function isSectionColumn(b)
@@ -269,56 +348,60 @@ function sectionPieceRole(b, columnBase)
 	var dx = b[3] - b[0], dy = b[4] - b[1], dz = b[5] - b[2];
 	var largest = Math.max(dx, dy, dz), smallest = Math.min(dx, dy, dz);
 
-	if (isSectionColumn(b)) return 'column';
+	if (isSectionColumn(b)) return b.round ? 'column' : 'girder';	// square posts are painted as the beams
 	if (b[2] < columnBase + 5 && Math.max(dx, dy) > 100 && dz < 70) return null;	// the base of the section
 	if (largest < 30) return smallest > 0 && largest / smallest < 2.5 ? 'dou' : 'bracket';	// 斗 compact, 栱 long
 	if (dx >= dy && dx > 25 && dz >= 0.25 * dx) return 'roof';	// rafters and roof boards: sloping across the building
 	return 'girder';	// beams, purlins and the other members
 }
 
-// Paints the section shown with the colors of the template (setPartColor in Painting.js): columns,
-// girders and roof as their groups (their color also while a pattern is painted on the building),
-// the 斗 and the 栱 as the brackets.
+// Paints the frame of the sections (all but the columns) with the colors of the template (setPartColor
+// in Painting.js): beams and purlins as the girders and the rafters and roof boards as the roof, in
+// their color also while a pattern is painted on the girders of the other pages, and the 斗 and the
+// 栱 as those of the 鋪作. The columns follow the material of the columns.
 function paintLayoutExample()
 {
+	var colors = {
+		girder: groupColors.girder || partMaterial.color,
+		roof: groupColors.roof || partMaterial.color,
+		dou: roleColors.dou.color,
+		bracket: roleColors.bracket.color
+	};
+
 	for (var name in layoutExamples) {
-		var section = layoutExamples[name].section;
-		if (!section) continue;
+		(layoutExamples[name].section || []).forEach(function (mesh) {
+			var roles = mesh.userData.roles;
+			if (!roles) return;
 
-		var roles = section.userData.roles, color = section.geometry.attributes.color;
-		var colors = {
-			column: groupColors.column || partMaterial.color,
-			girder: groupColors.girder || partMaterial.color,
-			roof: groupColors.roof || partMaterial.color,
-			dou: roleColors.dou.color,
-			bracket: roleColors.bracket.color
-		};
-
-		for (var i = 0; i < roles.length; i++) {
-			var c = colors[roles[i]];
-			color.array[i * 3] = c.r;
-			color.array[i * 3 + 1] = c.g;
-			color.array[i * 3 + 2] = c.b;
-		}
-		color.needsUpdate = true;
+			var color = mesh.geometry.attributes.color;
+			for (var i = 0; i < roles.length; i++) {
+				var c = colors[roles[i]];
+				color.array[i * 3] = c.r;
+				color.array[i * 3 + 1] = c.g;
+				color.array[i * 3 + 2] = c.b;
+			}
+			color.needsUpdate = true;
+		});
 	}
 }
 
-// the camera looks at the floor from the front left, above, from far enough to see all of it, a bit
-// toward the section and above the floor, as the section stands at the left end and is high
+// The camera looks at the floor from the front right, above (31.6° round from the front and 26.6°
+// up), with the section at the far left end, as in the pictures of the layouts (imgs/four_layouts_*.jpg),
+// at a point a bit toward the section and above the floor.
 function frameLayoutExample(example)
 {
 	var p = example.platform, s = LAYOUT_SCALE;
 	var size = Math.max(p[3] - p[0], p[4] - p[1]) * s;
-	var target = new THREE.Vector3(-0.1 * size, 0.12, 0);
+	var target = new THREE.Vector3(-0.113 * size, 0.088, 0);
+	var round = THREE.Math.degToRad(31.6), up = THREE.Math.degToRad(26.6);
 
 	viewTurn = null;
 	orbitControl.target.copy(target);
-	// near enough that the floor and the section fill the view: about 0.7 of the size each side of
-	// the target across the view and 0.5 up and down, seen from this direction
+	// near enough that the floor and the section fill the view, as in the pictures (1190 x 725), and
+	// farther in a narrower view, so that the floor stays across it
 	var tan = Math.tan(THREE.Math.degToRad(camera.fov / 2));
-	var distance = size * Math.max(0.7 / (tan * camera.aspect), 0.5 / tan);
+	var distance = size * Math.max(0.744 / (tan * camera.aspect), 0.4635 / tan);
 
-	camera.position.copy(target).add(new THREE.Vector3(-0.42, 0.5, 0.76).setLength(distance));
+	camera.position.copy(target).add(new THREE.Vector3(Math.cos(up) * Math.sin(round), Math.sin(up), Math.cos(up) * Math.cos(round)).multiplyScalar(distance));
 	camera.lookAt(target);
 }

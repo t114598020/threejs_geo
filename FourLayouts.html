@@ -30,6 +30,7 @@
         // (js/canvas/models/LayoutExamples.js in the preview), painted with the templates of the other pages.
         var obs = new Observer();      // setPaintTemplate in PaintTemplates.js
         var layout_shown = 'single';
+        shadow_shown = false;          // no shadows at first on this page (View menu, ViewMenu.js)
 
         function showLayout(_name) {
             layout_shown = _name;
@@ -40,6 +41,7 @@
 
         // the preview is ready once its page has loaded
         function viewerLoaded() {
+            obs.showShadowObserver(shadow_shown);
             showLayout(layout_shown);
         }
 
@@ -96,7 +98,7 @@
                             <font size="3"><span id="LightCheck_right" class="light-check" style="visibility: hidden;">&#10003;</span> Light Right</font>
                         </a></li>
                     <li><a href="#" onclick="toggleShadow()">
-                            <font size="3"><span id="ShadowCheck">&#10003;</span> Shadow</font>
+                            <font size="3"><span id="ShadowCheck" style="visibility: hidden;">&#10003;</span> Shadow</font>
                         </a></li>
                 </ul>
             </li>
