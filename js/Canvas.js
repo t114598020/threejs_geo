@@ -193,6 +193,17 @@ function actSetLight(_direction) {
 	sunLight.position.set(p[0], p[1], p[2]);
 }
 
+// Shadows on or off (View menu): the darkness of the shadows is set to nothing rather than the
+// shadows turned off, which would compile the shaders again. It is read from light.shadow, as
+// light.shadowDarkness of three.js r73 can only be set (reading it gives undefined, which turned
+// the whole view black once written back).
+var shadowDarkness;
+
+function actShowShadow(_show) {
+	if (shadowDarkness === undefined) shadowDarkness = sunLight.shadow.darkness;
+	sunLight.shadow.darkness = _show ? shadowDarkness : 0;
+}
+
 // Straight (View menu): the camera looks level at the middle height of the building, from where it
 // is turned now and at the same distance, e.g. for elevations with parallel projection.
 function actSetStraight() {
@@ -218,6 +229,17 @@ function actSetStraight() {
 
 	viewTurn = null;
 	camera.position.copy(target).add(offset);
+	camera.lookAt(target);
+}
+
+// Top (View menu): the camera looks straight down at the orbit target from the same distance, with
+// the front of the building at the bottom of the view. It stays a hair in front of straight above,
+// as the orbit control cannot turn the view while looking exactly down.
+function actSetTop() {
+	var target = orbitControl.target, distance = camera.position.distanceTo(target);
+
+	viewTurn = null;
+	camera.position.set(target.x, target.y + distance, target.z + distance * 1e-4);
 	camera.lookAt(target);
 }
 

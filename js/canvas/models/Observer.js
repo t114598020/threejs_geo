@@ -76,7 +76,15 @@ function Observer()
 	    document.getElementById('viewer').contentWindow.actSetStraight();
 	}
 
+	this.setTopObserver = function () {
+	    document.getElementById('viewer').contentWindow.actSetTop();
+	}
+
 	this.setLightObserver = function (_direction) {
 	    document.getElementById('viewer').contentWindow.actSetLight(_direction);
+	}
+
+	this.showShadowObserver = function (_show) {
+	    document.getElementById('viewer').contentWindow.actShowShadow(_show);
 	}
 }
