@@ -1,6 +1,6 @@
 // Four layout examples (FourLayouts.html): the floor of one of the four layouts of the Yingzao Fashi,
 // with a dot at every column and lines along the rows of columns, and the cross-section of its timber
-// frame (草架側樣) standing on the last row of columns.
+// frame (草架側樣) standing on a row of columns near the end of the building.
 //
 // Both come from the SketchUp models of yingzaofashi_x3d (inches, z up), which use the same units:
 //   layout       plan (殿閣分槽圖)                        section (草架側樣)
@@ -11,9 +11,11 @@
 // The floor is drawn from the columns and the platform of the plan (LAYOUT_EXAMPLES below), the
 // section is read from models/layouts/<section>.stl. Its columns stand on the plan's rows of columns:
 // plan y = section x + offset (found by matching the columns of the two models, within 1.5 inches),
-// plan z = section z + zShift, and its plane is the last row of columns along the building (endRow),
-// the frame reaching into the building. The frame of section 35 reaches the other way in its model,
-// so it is turned half round (turned) about the middle of the row of columns it stands on.
+// plan z = section z + zShift, and its plane is a row of columns across the building, the frame reaching
+// into the building: inset rows in from the last one (sectionRow), i.e. the first frame inside the
+// building, two rows in with side corridors (the last row is that of the side corridor, the next one
+// the end of the hall) and one without. The frame of section 35 reaches the other way in its model, so
+// it is turned half round (turned) about the middle of the row of columns it stands on.
 //
 // The parts of the section are told apart by the size and shape of every piece (triangles joined at
 // their corners): columns, beams and purlins (girder), rafters and roof boards (roof), and the 斗 and
@@ -23,22 +25,22 @@
 
 var LAYOUT_EXAMPLES = {
 	single: {
-		plan: 36, section: 38, offset: 297.1, zShift: 30.4, endRow: 422.8,
+		plan: 36, section: 38, offset: 297.1, zShift: 30.4, inset: 2,
 		platform: [-701.2, -216.6, -14.2, 472.9, 441.9, 27.1],
 		columns: [-651.1,-166.5,-651.1,-80.6,-651.1,48.2,-651.1,177,-651.1,305.9,-651.1,391.8,-565.2,-80.7,-565.2,48.2,-565.2,177,-565.2,305.9,-565.2,391.8,-565.1,-166.4,-436.3,-80.7,-436.3,177,-436.3,305.9,-436.3,391.8,-436.2,-166.4,-307.5,-80.7,-307.5,177,-307.5,305.9,-307.5,391.8,-307.4,-166.4,-178.6,-80.7,-178.6,177,-178.6,305.9,-178.6,391.8,-178.5,-166.4,-49.7,-166.4,-49.6,-80.7,-49.6,177,-49.6,305.9,-49.6,391.8,79.2,-166.4,79.3,-80.7,79.3,177,79.3,305.9,79.3,391.8,208,-166.4,208.1,-80.7,208.1,177,208.1,305.9,208.1,391.8,336.8,-166.4,336.9,-80.7,336.9,48.2,336.9,177,336.9,305.9,336.9,391.8,422.8,-166.5,422.8,-80.6,422.8,48.2,422.8,177,422.8,305.9,422.8,391.8]
 	},
 	double: {
-		plan: 30, section: 32, offset: 455.4, zShift: 32.6, endRow: 984,
+		plan: 30, section: 32, offset: 455.4, zShift: 32.6, inset: 2,
 		platform: [-182.7, -230.9, -11.8, 1078, 642.4, 29.5],
 		columns: [-89.6,-137.8,-89.6,-51.9,-89.6,76.9,-89.6,205.8,-89.6,334.6,-89.6,463.5,-89.6,549.4,-3.7,-137.8,-3.7,-51.9,-3.7,76.9,-3.7,205.8,-3.7,334.6,-3.7,463.5,-3.7,549.4,125.1,-137.8,125.1,-51.9,125.1,76.9,125.1,334.6,125.1,463.5,125.1,549.4,253.9,-137.8,253.9,-51.9,253.9,76.9,253.9,334.6,253.9,463.5,253.9,549.4,382.8,-137.8,382.8,-51.9,382.8,76.9,382.8,334.6,382.8,463.5,383.2,549.4,511.2,549.4,511.6,-137.8,511.6,-51.9,511.6,76.9,511.6,334.6,511.6,463.5,640.5,-137.8,640.5,-51.9,640.5,76.9,640.5,334.6,640.5,463.5,640.5,549.4,769.3,-137.8,769.3,-51.9,769.3,76.9,769.3,334.6,769.3,463.5,769.3,549.4,898.1,-137.8,898.1,-51.9,898.1,76.9,898.1,205.8,898.1,334.6,898.1,463.5,898.1,549.4,984,-137.8,984,-51.9,984,76.9,984,205.8,984,334.6,984,463.5,984,549.4]
 	},
 	split: {
-		plan: 39, section: 41, offset: 167, zShift: 1.4, endRow: 281.2,
+		plan: 39, section: 41, offset: 167, zShift: 1.4, inset: 1,
 		platform: [-860.5, -375.8, -43, 360, 254.1, -1.7],
 		columns: [-781.8,-297.1,-781.8,-179,-781.8,-60.9,-781.8,57.2,-781.8,175.3,-663.7,-297.1,-663.7,-60.9,-663.7,175.3,-545.5,-297.1,-545.5,-60.9,-545.5,175.3,-427.4,-297.1,-427.4,-60.9,-427.4,175.3,-309.3,-297.1,-309.3,-60.9,-309.3,175.3,-191.2,-297.1,-191.2,-60.9,-191.2,175.3,-73.1,-297.1,-73.1,-60.9,-73.1,175.3,45,-297.1,45,-60.9,45,175.3,163.1,-297.1,163.1,-60.9,163.1,175.3,281.2,-297.1,281.2,-179,281.2,-60.9,281.2,57.2,281.2,175.3]
 	},
 	concentric: {
-		plan: 33, section: 35, offset: 625.4, zShift: 157.1, endRow: 1147.7, turned: true,
+		plan: 33, section: 35, offset: 625.4, zShift: 157.1, inset: 2, turned: true,
 		platform: [12.4, 210.1, 112.5, 1209.3, 1020.8, 153.8],
 		columns: [74,271.2,74,357.5,74,486.4,74,615.2,74,744,74,872.9,74,958.8,159.9,271.6,159.9,357.5,159.9,486.4,159.9,615.2,159.9,744,159.9,872.9,159.9,958.8,288.7,271.6,288.7,357.5,288.7,486.4,288.7,615.2,288.7,744,288.7,872.9,288.7,958.8,417.6,271.6,417.6,357.5,417.6,486.4,417.6,744,417.6,872.9,417.6,958.8,546.4,271.6,546.4,357.5,546.4,486.4,546.4,744,546.4,872.9,546.4,958.8,675.3,271.6,675.3,357.5,675.3,486.4,675.3,744,675.3,872.9,675.3,958.8,804.1,271.6,804.1,357.5,804.1,486.4,804.1,744,804.1,872.9,804.1,958.8,932.9,271.6,932.9,357.5,932.9,486.4,932.9,744,932.9,872.9,932.9,958.8,933,615.2,1061.8,271.6,1061.8,357.5,1061.8,486.4,1061.8,615.2,1061.8,744,1061.8,872.9,1061.8,958.8,1147.7,271.6,1147.7,357.5,1147.7,486.4,1147.7,615.2,1147.7,744,1147.7,872.9,1147.7,959.3]
 	}
@@ -86,14 +88,23 @@ function planToScene(example)
 		0, 0, 0, 1);
 }
 
+// the row of columns across the building that the section stands on (plan x): inset rows in from the
+// last one
+function sectionRow(example)
+{
+	var xs = layoutRows(example.columns, 0);
+	return xs[xs.length - 1 - example.inset];
+}
+
 // section coordinates -> plan: section x along the plan's y (the depth of the building), section y
-// into the building from the last row of columns, z up. A turned section is then turned half round
-// about the middle of its row of columns, which keeps its columns on the columns of the plan (the
-// rows are the same from the front and from the back).
+// into the building from its row of columns, z up. A turned section is then turned half round about
+// the middle of its row of columns, which keeps its columns on the columns of the plan (the rows are
+// the same from the front and from the back).
 function sectionToPlan(example)
 {
+	var row = sectionRow(example);
 	var matrix = new THREE.Matrix4().set(
-		0, -1, 0, example.endRow,
+		0, -1, 0, row,
 		1, 0, 0, example.offset,
 		0, 0, 1, example.zShift,
 		0, 0, 0, 1);
@@ -101,7 +112,7 @@ function sectionToPlan(example)
 	if (example.turned) {
 		var ys = layoutRows(example.columns, 1), middle = (ys[0] + ys[ys.length - 1]) / 2;
 		var turn = new THREE.Matrix4().set(
-			-1, 0, 0, 2 * example.endRow,
+			-1, 0, 0, 2 * row,
 			0, -1, 0, 2 * middle,
 			0, 0, 1, 0,
 			0, 0, 0, 1);
