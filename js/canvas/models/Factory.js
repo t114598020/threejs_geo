@@ -369,7 +369,7 @@ function Factory()
 	    });
 	}
 
-	this.addMidTileInside = function (id, _x, _y, _z, _scale_rate) {
+	this.addMidTileInside = function (id, _x, _y, _z, _scale_rate, _rise) {
 	    var mesh;
 
 	    loadPart('MidTileInside', function (geometry) {
@@ -379,7 +379,7 @@ function Factory()
 
 	        mesh.position.set(_x, _y, _z);
 	        mesh.rotation.set(0, 0, 0);
-	        mesh.scale.set(0.00112, 0.001, 0.00112 * _scale_rate / 4);
+	        mesh.scale.set(0.00112, 0.001 * (_rise || 1), 0.00112 * _scale_rate / 4);
 
 	        mesh.castShadow = true;
 	        mesh.receiveShadow = true;
@@ -388,7 +388,7 @@ function Factory()
 	    });
 	}
 
-	this.addMidTileOutside = function (id, _x, _y, _z, _reotate_y, _scale_rate) {
+	this.addMidTileOutside = function (id, _x, _y, _z, _reotate_y, _scale_rate, _rise) {
 	    var mesh;
 
 	    loadPart('MidTileOutside', function (geometry) {
@@ -398,7 +398,7 @@ function Factory()
 
 	        mesh.position.set(_x, _y, _z);
 	        mesh.rotation.set(0, _reotate_y, 0);
-	        mesh.scale.set(0.00112, 0.001, 0.00112 * _scale_rate / 4);
+	        mesh.scale.set(0.00112, 0.001 * (_rise || 1), 0.00112 * _scale_rate / 4);
 
 	        mesh.castShadow = true;
 	        mesh.receiveShadow = true;
@@ -407,7 +407,7 @@ function Factory()
 	    });
 	}
 
-	this.addTopTileOutside = function (id, _x, _y, _z, _reotate_y, _scale_rate) {
+	this.addTopTileOutside = function (id, _x, _y, _z, _reotate_y, _scale_rate, _rise) {
 	    var mesh;
 
 	    loadPart('TopTileOutside', function (geometry) {
@@ -417,7 +417,7 @@ function Factory()
 
 	        mesh.position.set(_x, _y, _z);
 	        mesh.rotation.set(0, _reotate_y, 0);
-	        mesh.scale.set(0.00112, 0.001, 0.00112 * _scale_rate);
+	        mesh.scale.set(0.00112, 0.001 * (_rise || 1), 0.00112 * _scale_rate);
 
 	        mesh.castShadow = true;
 	        mesh.receiveShadow = true;
@@ -426,7 +426,7 @@ function Factory()
 	    });
 	}
 
-	this.addTopTileInside = function (id, _x, _y, _z, _scale_rate) {
+	this.addTopTileInside = function (id, _x, _y, _z, _scale_rate, _rise) {
 	    var mesh;
 
 	    loadPart('TopTileInside', function (geometry) {
@@ -436,7 +436,7 @@ function Factory()
 
 	        mesh.position.set(_x, _y, _z);
 	        mesh.rotation.set(0, 0, 0);
-	        mesh.scale.set(0.00112, 0.001, 0.00112 * _scale_rate);
+	        mesh.scale.set(0.00112, 0.001 * (_rise || 1), 0.00112 * _scale_rate);
 
 	        mesh.castShadow = true;
 	        mesh.receiveShadow = true;
@@ -445,7 +445,7 @@ function Factory()
 	    });
 	}
 
-	this.addCornerSideTile = function (id, _x, _y, _z, _reotate_y) {
+	this.addCornerSideTile = function (id, _x, _y, _z, _reotate_y, _rise) {
 	    var mesh;
 
 	    loadPart('CornerTile', function (geometry) {
@@ -455,7 +455,7 @@ function Factory()
 
 	        mesh.position.set(_x, _y, _z);
 	        mesh.rotation.set(0,_reotate_y, 0.1);
-	        mesh.scale.set(0.001, 0.001, 0.00115);
+	        mesh.scale.set(0.001, 0.001 * (_rise || 1), 0.00115);
 
 	        mesh.castShadow = true;
 	        mesh.receiveShadow = true;
@@ -483,7 +483,7 @@ function Factory()
 	    });
 	}
 
-	this.addBaseTile = function (id, _x, _y, _z, _scale_rate) {
+	this.addBaseTile = function (id, _x, _y, _z, _scale_rate, _rise) {
 	    var mesh;
 
 	    loadPart('BaseTile', function (geometry) {
@@ -493,7 +493,7 @@ function Factory()
 
 	        mesh.position.set(_x, _y, _z);
 	        mesh.rotation.set(0, 0, 0);
-	        mesh.scale.set(0.00112, 0.001, 0.00112 * _scale_rate / 4);
+	        mesh.scale.set(0.00112, 0.001 * (_rise || 1), 0.00112 * _scale_rate / 4);
 
 	        mesh.castShadow = true;
 	        mesh.receiveShadow = true;
@@ -502,7 +502,7 @@ function Factory()
 	    });
 	}
 
-	this.addBaseTileOutside = function (id, _x, _y, _z, _reotate_y, _scale_rate) {
+	this.addBaseTileOutside = function (id, _x, _y, _z, _reotate_y, _scale_rate, _rise) {
 	    var mesh;
 
 	    loadPart('BaseTileOutside', function (geometry) {
@@ -512,7 +512,7 @@ function Factory()
 
 	        mesh.position.set(_x, _y, _z);
 	        mesh.rotation.set(0, _reotate_y, 0);
-	        mesh.scale.set(0.00112, 0.001, 0.00112 * _scale_rate / 4);
+	        mesh.scale.set(0.00112, 0.001 * (_rise || 1), 0.00112 * _scale_rate / 4);
 
 	        mesh.castShadow = true;
 	        mesh.receiveShadow = true;

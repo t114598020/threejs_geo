@@ -678,12 +678,32 @@ function AddStairCommand(_scene, _fac, _data,  _coor, _w, _h) {
     }
 }
 
+// 舉折: the height of the roof, from the eaves to the ridge, is a third of its depth (H = B / 3), so a
+// deeper building has a higher roof of the same slope. The pieces of the main roof are stacked to a
+// height of their own: 0.1 above the eaves for the BaseTile, 0.032 for every MidTile, and the TopTile
+// (105.2 STL units high, 1.7 of them below its origin, at scale 0.001). They are stretched upward from
+// the eaves (y 0.3) by B / 3 over that height, B being the depth of the BaseTile across the roof
+// (704.6 STL units at scale 0.00112 * depth / 4). The roof of the side corridor stays as it is.
+var ROOF_EAVES = 0.3;
+
+function roofRise(_depth, _layers) {
+    var depth = 0.7046 * 1.12 * _depth / 4;
+    var height = 0.1 + 0.032 * _layers + 0.1035;
+    return depth / 3 / height;
+}
+
 function AddRoofCommand(_scene, _fac, _data) {
     var spaces = _data.spaces;
     var my_ids = [];
 
     this.execute = function () {
         var id = 0;
+        // the depth of the main roof in spaces and its number of MidTile layers (the loops below)
+        var corridor = spaces[0][0].isSideCorridor();
+        var depth = spaces[0].length - (corridor ? 2 : 0);
+        var layers = Math.max(0, Math.round(spaces[0].length / 2) - (corridor ? 2 : 1));
+        var rise = roofRise(depth, layers);
+        function up(_y) { return ROOF_EAVES + (_y - ROOF_EAVES) * rise; }
         if (spaces[0][0].isSideCorridor()) {
             //sidecorridor part
             //top side
@@ -749,15 +769,15 @@ function AddRoofCommand(_scene, _fac, _data) {
                 var offset_y = 0.3;
                 coor = adjustCoor({ x: spaces[1][i].getX(), y: spaces[1][i].getY() });
                 if (spaces[0].length - 2 <= 3) {                                                        //except handle
-                    _fac.addCornerSideTile("Roof" + id.toString(), coor.x + 0.105, offset_y + 0.01, coor.z + space_length / 4, Math.PI);
+                    _fac.addCornerSideTile("Roof" + id.toString(), coor.x + 0.105, up(offset_y + 0.01), coor.z + space_length / 4, Math.PI, rise);
                     my_ids.push(id++);
-                    _fac.addCornerSideTile("Roof" + id.toString(), coor.x + 0.105, offset_y + 0.01, coor.z + space_length, Math.PI);
+                    _fac.addCornerSideTile("Roof" + id.toString(), coor.x + 0.105, up(offset_y + 0.01), coor.z + space_length, Math.PI, rise);
                     my_ids.push(id++);
                 } else {
                     if (i < spaces[0].length / 2) {
-                        _fac.addCornerSideTile("Roof" + id.toString(), coor.x + 0.105, offset_y + 0.01, coor.z + space_length / 2.5, Math.PI);
+                        _fac.addCornerSideTile("Roof" + id.toString(), coor.x + 0.105, up(offset_y + 0.01), coor.z + space_length / 2.5, Math.PI, rise);
                     } else {
-                        _fac.addCornerSideTile("Roof" + id.toString(), coor.x + 0.105, offset_y + 0.01, coor.z + space_length / 1.5, Math.PI);
+                        _fac.addCornerSideTile("Roof" + id.toString(), coor.x + 0.105, up(offset_y + 0.01), coor.z + space_length / 1.5, Math.PI, rise);
                     }
 
 
@@ -778,11 +798,11 @@ function AddRoofCommand(_scene, _fac, _data) {
                 }
                 //縱向面外
                 if (i == 2) {
-                    _fac.addBaseTileOutside("Roof" + id.toString(), coor.x + space_length, offset_y, coor.z, Math.PI, scale_rate);
+                    _fac.addBaseTileOutside("Roof" + id.toString(), coor.x + space_length, up(offset_y), coor.z, Math.PI, scale_rate, rise);
                 } else if (i == spaces.length - 3) {
-                    _fac.addBaseTileOutside("Roof" + id.toString(), coor.x, offset_y, coor.z, 0, scale_rate);
+                    _fac.addBaseTileOutside("Roof" + id.toString(), coor.x, up(offset_y), coor.z, 0, scale_rate, rise);
                 } else {
-                    _fac.addBaseTile("Roof" + id.toString(), coor.x, offset_y, coor.z, scale_rate);
+                    _fac.addBaseTile("Roof" + id.toString(), coor.x, up(offset_y), coor.z, scale_rate, rise);
                 }
                 
                 my_ids.push(id++);
@@ -790,11 +810,11 @@ function AddRoofCommand(_scene, _fac, _data) {
                 //縱向面中
                 for (j = 2; j < Math.round(spaces[0].length / 2) ; j++) {
                     if (i == 2) {
-                        _fac.addMidTileOutside("Roof" + id.toString(), coor.x + space_length, offset_y + 0.001, coor.z + 0.005, Math.PI, scale_rate);
+                        _fac.addMidTileOutside("Roof" + id.toString(), coor.x + space_length, up(offset_y + 0.001), coor.z + 0.005, Math.PI, scale_rate, rise);
                     } else if (i == spaces.length - 3) {
-                        _fac.addMidTileOutside("Roof" + id.toString(), coor.x, offset_y + 0.001, coor.z - 0.005, 0, scale_rate);
+                        _fac.addMidTileOutside("Roof" + id.toString(), coor.x, up(offset_y + 0.001), coor.z - 0.005, 0, scale_rate, rise);
                     } else {
-                        _fac.addMidTileInside("Roof" + id.toString(), coor.x, offset_y, coor.z, scale_rate);
+                        _fac.addMidTileInside("Roof" + id.toString(), coor.x, up(offset_y), coor.z, scale_rate, rise);
                     }
                     my_ids.push(id++);
                     offset_y += 0.032;
@@ -810,21 +830,21 @@ function AddRoofCommand(_scene, _fac, _data) {
                 var sscale_rate = 1;
                 if (spaces[0].length % 2 == 0) {
                     if (i == 2) {
-                        _fac.addTopTileOutside("Roof" + id.toString(), coor.x, offset_y + 0.001, coor.z, Math.PI, sscale_rate);
+                        _fac.addTopTileOutside("Roof" + id.toString(), coor.x, up(offset_y + 0.001), coor.z, Math.PI, sscale_rate, rise);
                     } else if (i == spaces.length - 3) {
-                        _fac.addTopTileOutside("Roof" + id.toString(), coor.x + space_length - 0.005, offset_y + 0.002, coor.z, 0, sscale_rate);
+                        _fac.addTopTileOutside("Roof" + id.toString(), coor.x + space_length - 0.005, up(offset_y + 0.002), coor.z, 0, sscale_rate, rise);
                     } else {
-                        _fac.addTopTileInside("Roof" + id.toString(), coor.x, offset_y, coor.z, sscale_rate);
+                        _fac.addTopTileInside("Roof" + id.toString(), coor.x, up(offset_y), coor.z, sscale_rate, rise);
                     }           
                 } else {
                     if (spaces[0].length <= 5) sscale_rate = 0.74;
                     else sscale_rate = 0.86;
                     if (i == 2) {
-                        _fac.addTopTileOutside("Roof" + id.toString(), coor.x, offset_y + 0.001, coor.z, Math.PI, sscale_rate);
+                        _fac.addTopTileOutside("Roof" + id.toString(), coor.x, up(offset_y + 0.001), coor.z, Math.PI, sscale_rate, rise);
                     } else if (i == spaces.length - 3) {
-                        _fac.addTopTileOutside("Roof" + id.toString(), coor.x + space_length - 0.005, offset_y + 0.002, coor.z, 0, sscale_rate);
+                        _fac.addTopTileOutside("Roof" + id.toString(), coor.x + space_length - 0.005, up(offset_y + 0.002), coor.z, 0, sscale_rate, rise);
                     } else {
-                        _fac.addTopTileInside("Roof" + id.toString(), coor.x, offset_y, coor.z, sscale_rate);
+                        _fac.addTopTileInside("Roof" + id.toString(), coor.x, up(offset_y), coor.z, sscale_rate, rise);
                     }
                 }
                 
@@ -836,15 +856,15 @@ function AddRoofCommand(_scene, _fac, _data) {
                 var offset_y = 0.3;
                 coor = adjustCoor({ x: spaces[spaces.length - 2][i].getX(), y: spaces[spaces.length - 2][i].getY() });
                 if (spaces[0].length - 2 <= 3) {                                                        //except handle
-                    _fac.addCornerSideTile("Roof" + id.toString(), coor.x + 0.05, offset_y + 0.01, coor.z + space_length / 6, 0);
+                    _fac.addCornerSideTile("Roof" + id.toString(), coor.x + 0.05, up(offset_y + 0.01), coor.z + space_length / 6, 0, rise);
                     my_ids.push(id++);
-                    _fac.addCornerSideTile("Roof" + id.toString(), coor.x + 0.05, offset_y + 0.01, coor.z + space_length / 1.2, 0);
+                    _fac.addCornerSideTile("Roof" + id.toString(), coor.x + 0.05, up(offset_y + 0.01), coor.z + space_length / 1.2, 0, rise);
                     my_ids.push(id++);
                 } else {
                     if (i < spaces[0].length / 2) {
-                        _fac.addCornerSideTile("Roof" + id.toString(), coor.x + 0.05, offset_y + 0.01, coor.z + space_length / 3, 0);
+                        _fac.addCornerSideTile("Roof" + id.toString(), coor.x + 0.05, up(offset_y + 0.01), coor.z + space_length / 3, 0, rise);
                     } else {
-                        _fac.addCornerSideTile("Roof" + id.toString(), coor.x + 0.05, offset_y + 0.01, coor.z + space_length / 1.7, 0);
+                        _fac.addCornerSideTile("Roof" + id.toString(), coor.x + 0.05, up(offset_y + 0.01), coor.z + space_length / 1.7, 0, rise);
                     }
                     my_ids.push(id++);
                 }
@@ -858,15 +878,15 @@ function AddRoofCommand(_scene, _fac, _data) {
                 var offset_y = 0.3;
                 coor = adjustCoor({ x: spaces[0][i].getX(), y: spaces[0][i].getY() });
                 if (spaces[0].length <= 3) {                                                        //except handle
-                    _fac.addCornerSideTile("Roof" + id.toString(), coor.x + 0.105, offset_y + 0.01, coor.z + space_length / 4, Math.PI);
+                    _fac.addCornerSideTile("Roof" + id.toString(), coor.x + 0.105, up(offset_y + 0.01), coor.z + space_length / 4, Math.PI, rise);
                     my_ids.push(id++);
-                    _fac.addCornerSideTile("Roof" + id.toString(), coor.x + 0.105, offset_y + 0.01, coor.z + space_length, Math.PI);
+                    _fac.addCornerSideTile("Roof" + id.toString(), coor.x + 0.105, up(offset_y + 0.01), coor.z + space_length, Math.PI, rise);
                     my_ids.push(id++);
                 } else {
                     if (i < spaces[0].length / 2) {
-                        _fac.addCornerSideTile("Roof" + id.toString(), coor.x + 0.105, offset_y + 0.01, coor.z + space_length / 2.5, Math.PI);
+                        _fac.addCornerSideTile("Roof" + id.toString(), coor.x + 0.105, up(offset_y + 0.01), coor.z + space_length / 2.5, Math.PI, rise);
                     } else {
-                        _fac.addCornerSideTile("Roof" + id.toString(), coor.x + 0.105, offset_y + 0.01, coor.z + space_length / 1.5, Math.PI);
+                        _fac.addCornerSideTile("Roof" + id.toString(), coor.x + 0.105, up(offset_y + 0.01), coor.z + space_length / 1.5, Math.PI, rise);
                     }
                     my_ids.push(id++);
                 }
@@ -885,11 +905,11 @@ function AddRoofCommand(_scene, _fac, _data) {
                 }
                 //縱向面外
                 if (i == 1) {
-                    _fac.addBaseTileOutside("Roof" + id.toString(), coor.x + space_length, offset_y, coor.z, Math.PI, scale_rate);
+                    _fac.addBaseTileOutside("Roof" + id.toString(), coor.x + space_length, up(offset_y), coor.z, Math.PI, scale_rate, rise);
                 } else if (i == spaces.length - 2) {
-                    _fac.addBaseTileOutside("Roof" + id.toString(), coor.x, offset_y, coor.z, 0, scale_rate);
+                    _fac.addBaseTileOutside("Roof" + id.toString(), coor.x, up(offset_y), coor.z, 0, scale_rate, rise);
                 } else {
-                    _fac.addBaseTile("Roof" + id.toString(), coor.x, offset_y, coor.z, scale_rate);
+                    _fac.addBaseTile("Roof" + id.toString(), coor.x, up(offset_y), coor.z, scale_rate, rise);
                 }
                 
                 my_ids.push(id++);
@@ -897,11 +917,11 @@ function AddRoofCommand(_scene, _fac, _data) {
                 //縱向面中
                 for (j = 1; j < Math.round(spaces[0].length / 2) ; j++) {
                     if (i == 1) {
-                        _fac.addMidTileOutside("Roof" + id.toString(), coor.x + space_length, offset_y + 0.001, coor.z + 0.005, Math.PI, scale_rate);
+                        _fac.addMidTileOutside("Roof" + id.toString(), coor.x + space_length, up(offset_y + 0.001), coor.z + 0.005, Math.PI, scale_rate, rise);
                     } else if (i == spaces.length - 2) {
-                        _fac.addMidTileOutside("Roof" + id.toString(), coor.x, offset_y + 0.001, coor.z - 0.005, 0, scale_rate);
+                        _fac.addMidTileOutside("Roof" + id.toString(), coor.x, up(offset_y + 0.001), coor.z - 0.005, 0, scale_rate, rise);
                     } else {
-                        _fac.addMidTileInside("Roof" + id.toString(), coor.x, offset_y, coor.z, scale_rate);
+                        _fac.addMidTileInside("Roof" + id.toString(), coor.x, up(offset_y), coor.z, scale_rate, rise);
                     }
                     my_ids.push(id++);
                     offset_y += 0.032;
@@ -917,21 +937,21 @@ function AddRoofCommand(_scene, _fac, _data) {
                 var sssscale_rate = 1
                 if (spaces[0].length % 2 == 0) {
                     if (i == 1) {
-                        _fac.addTopTileOutside("Roof" + id.toString(), coor.x, offset_y + 0.001, coor.z, Math.PI, sssscale_rate);
+                        _fac.addTopTileOutside("Roof" + id.toString(), coor.x, up(offset_y + 0.001), coor.z, Math.PI, sssscale_rate, rise);
                     } else if (i == spaces.length - 2) {
-                        _fac.addTopTileOutside("Roof" + id.toString(), coor.x + space_length - 0.005, offset_y + 0.002, coor.z, 0, sssscale_rate);
+                        _fac.addTopTileOutside("Roof" + id.toString(), coor.x + space_length - 0.005, up(offset_y + 0.002), coor.z, 0, sssscale_rate, rise);
                     } else {
-                        _fac.addTopTileInside("Roof" + id.toString(), coor.x, offset_y, coor.z, sssscale_rate);
+                        _fac.addTopTileInside("Roof" + id.toString(), coor.x, up(offset_y), coor.z, sssscale_rate, rise);
                     }           
                 } else {
                     if (spaces[0].length <= 3) sscale_rate = 0.74;
                     else sscale_rate = 0.86;
                     if (i == 1) {
-                        _fac.addTopTileOutside("Roof" + id.toString(), coor.x, offset_y + 0.001, coor.z, Math.PI, sscale_rate);
+                        _fac.addTopTileOutside("Roof" + id.toString(), coor.x, up(offset_y + 0.001), coor.z, Math.PI, sscale_rate, rise);
                     } else if (i == spaces.length - 2) {
-                        _fac.addTopTileOutside("Roof" + id.toString(), coor.x + space_length - 0.005, offset_y + 0.002, coor.z, 0, sscale_rate);
+                        _fac.addTopTileOutside("Roof" + id.toString(), coor.x + space_length - 0.005, up(offset_y + 0.002), coor.z, 0, sscale_rate, rise);
                     } else {
-                        _fac.addTopTileInside("Roof" + id.toString(), coor.x, offset_y, coor.z, sscale_rate);
+                        _fac.addTopTileInside("Roof" + id.toString(), coor.x, up(offset_y), coor.z, sscale_rate, rise);
                     }
                 }
                 
@@ -943,15 +963,15 @@ function AddRoofCommand(_scene, _fac, _data) {
                 var offset_y = 0.3;
                 coor = adjustCoor({ x: spaces[spaces.length - 1][i].getX(), y: spaces[spaces.length - 1][i].getY() });
                 if (spaces[0].length <= 3) {                                                        //except handle
-                    _fac.addCornerSideTile("Roof" + id.toString(), coor.x + 0.05, offset_y + 0.01, coor.z + space_length / 6, 0);
+                    _fac.addCornerSideTile("Roof" + id.toString(), coor.x + 0.05, up(offset_y + 0.01), coor.z + space_length / 6, 0, rise);
                     my_ids.push(id++);
-                    _fac.addCornerSideTile("Roof" + id.toString(), coor.x + 0.05, offset_y + 0.01, coor.z + space_length / 1.2, 0);
+                    _fac.addCornerSideTile("Roof" + id.toString(), coor.x + 0.05, up(offset_y + 0.01), coor.z + space_length / 1.2, 0, rise);
                     my_ids.push(id++);
                 } else {
                     if (i < spaces[0].length / 2) {
-                        _fac.addCornerSideTile("Roof" + id.toString(), coor.x + 0.05, offset_y + 0.01, coor.z + space_length / 3, 0);
+                        _fac.addCornerSideTile("Roof" + id.toString(), coor.x + 0.05, up(offset_y + 0.01), coor.z + space_length / 3, 0, rise);
                     } else {
-                        _fac.addCornerSideTile("Roof" + id.toString(), coor.x + 0.05, offset_y + 0.01, coor.z + space_length / 1.7, 0);
+                        _fac.addCornerSideTile("Roof" + id.toString(), coor.x + 0.05, up(offset_y + 0.01), coor.z + space_length / 1.7, 0, rise);
                     }
                     my_ids.push(id++);
                 }
