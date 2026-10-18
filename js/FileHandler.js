@@ -1,9 +1,18 @@
 ﻿function FileHandler() {
+    // Only the drawing: the <svg> of #space (which also holds the 彩畫 buttons), written as XML and
+    // sized to what is drawn, as its width of 100% means nothing once it is a file of its own (the
+    // plan below the first 150 pixels was cut off).
     this.SVGexporter = function () {
-        //Get all svg element
-        var html = $('<div>').append($('#space').clone()).html();
+        var svg = $('#space > svg')[0], box = svg.getBBox(), pad = 20;
+        var w = Math.ceil(box.width + 2 * pad), h = Math.ceil(box.height + 2 * pad);
+        var copy = svg.cloneNode(true);
 
-        var blob = new Blob([html.toString()], { type: "text/plain;charset=utf-8" });
+        copy.setAttribute("width", w);
+        copy.setAttribute("height", h);
+        copy.setAttribute("viewBox", [Math.floor(box.x - pad), Math.floor(box.y - pad), w, h].join(" "));
+
+        var xml = '<?xml version="1.0" encoding="UTF-8"?>\n' + new XMLSerializer().serializeToString(copy);
+        var blob = new Blob([xml], { type: "image/svg+xml;charset=utf-8" });
         saveAs(blob, "layout.svg");
     }
 
