@@ -84,6 +84,10 @@ function Observer()
 	    document.getElementById('viewer').contentWindow.actSetTop();
 	}
 
+	this.setRotateObserver = function (_rotate) {
+	    document.getElementById('viewer').contentWindow.actSetRotate(_rotate);
+	}
+
 	this.setLightObserver = function (_direction) {
 	    document.getElementById('viewer').contentWindow.actSetLight(_direction);
 	}

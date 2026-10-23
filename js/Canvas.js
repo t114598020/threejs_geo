@@ -53,8 +53,9 @@ function init() {
 
 	//CONTROL				
 	orbitControl = new THREE.OrbitControls(camera);
-	// dragging the view stops a turn of the View menu
-	orbitControl.addEventListener('start', function () { viewTurn = null; });
+	// dragging the view stops a turn of the View menu, and holds Rotate 360° until it is let go
+	orbitControl.addEventListener('start', function () { viewTurn = null; rotateHeld = true; });
+	orbitControl.addEventListener('end', function () { rotateHeld = false; });
 
 	// stats
 	stats = fac.addNewStats();
@@ -186,6 +187,31 @@ function turnView() {
 	camera.lookAt(target);
 
 	if (t == 1) viewTurn = null;
+}
+
+// Rotate 360° (View menu): the camera keeps going around the orbit target, counterclockwise seen
+// from above, once in rotate_period milliseconds, keeping its distance and height. It waits while
+// the view is dragged or a turn of the View menu is under way, and goes on from there.
+var rotate_period = 30000;
+var rotating = false, rotateHeld = false, rotateLast = 0;
+
+function actSetRotate(_rotate) {
+	rotating = _rotate;
+	rotateLast = Date.now();
+}
+
+function rotateView() {
+	var now = Date.now(), elapsed = now - rotateLast;
+
+	rotateLast = now;
+	if (!rotating || rotateHeld || viewTurn) return;
+
+	var target = orbitControl.target;
+	var offset = camera.position.clone().sub(target);
+
+	offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), 2 * Math.PI * Math.min(elapsed, 100) / rotate_period);
+	camera.position.copy(target).add(offset);
+	camera.lookAt(target);
 }
 
 // The shadowed light shines from the front, the left or the right (View menu), always as strong.
@@ -339,6 +365,7 @@ function animate() {
 function render() {
 
 	turnView();
+	rotateView();
 	var view = viewCamera();
 
 	if (!showBackground) {
